@@ -105,7 +105,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
-vim.opt.mouse = 'a'
+vim.opt.mouse = ''
 
 -- Don't show the mode, since it's already in the status line
 vim.opt.showmode = false
@@ -161,6 +161,19 @@ vim.opt.scrolloff = 10
 -- See `:help 'confirm'`
 vim.opt.confirm = true
 
+-- Custom options
+vim.opt.backspace = '2'
+vim.opt.showcmd = true
+vim.opt.laststatus = 2
+vim.opt.cursorline = true
+vim.opt.autoread = true
+
+-- use spaces for tabs
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.shiftround = true
+vim.opt.expandtab = true
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -214,6 +227,46 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+vim.api.nvim_create_autocmd({ 'BufEnter' }, {
+  pattern = { '*.*.*' },
+  callback = function()
+    local filename = vim.fn.expand '%:p'
+    local extensions = {}
+
+    -- Split the filename by dots to get extensions
+    for ext in string.gmatch(filename, '[^.]+') do
+      table.insert(extensions, ext)
+    end
+
+    -- If we have at least two extensions
+    if #extensions >= 2 then
+      local second_to_last_ext = extensions[#extensions - 1]
+
+      -- Map of extensions to filetypes
+      local extension_map = {
+        md = 'markdown',
+        sh = 'shell',
+        properties = 'toml',
+        ini = 'toml',
+        yaml = 'yaml',
+        yml = 'yaml',
+        toml = 'toml',
+        json = 'json',
+        py = 'python',
+        js = 'javascript',
+        html = 'html',
+        css = 'css',
+        -- Add more mappings as needed
+      }
+
+      -- Set filetype if we have a mapping for it
+      if extension_map[second_to_last_ext] then
+        vim.bo.filetype = extension_map[second_to_last_ext]
+      end
+    end
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -239,7 +292,7 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  -- 'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -690,6 +743,73 @@ require('lazy').setup({
             },
           },
         },
+        pylsp = {
+          settings = {
+            pylsp = {
+              plugins = {
+                pyflakes = { enabled = false },
+                pycodestyle = { enabled = false },
+                autopep8 = { enabled = false },
+                yapf = { enabled = false },
+                mccabe = { enabled = false },
+                pylsp_mypy = { enabled = false },
+                pylsp_black = { enabled = false },
+                pylsp_isort = { enabled = false },
+              },
+            },
+          },
+        },
+        -- basedpyright = {
+        --   -- Config options: https://github.com/DetachHead/basedpyright/blob/main/docs/settings.md
+        --   settings = {
+        --     basedpyright = {
+        --       disableOrganizeImports = true, -- Using Ruff's import organizer
+        --       disableLanguageServices = false,
+        --       analysis = {
+        --         ignore = { '*' },                 -- Ignore all files for analysis to exclusively use Ruff for linting
+        --         typeCheckingMode = 'off',
+        --         diagnosticMode = 'openFilesOnly', -- Only analyze open files
+        --         useLibraryCodeForTypes = true,
+        --         autoImportCompletions = true,     -- whether pyright offers auto-import completions
+        --       },
+        --     },
+        --   },
+        -- },
+        ruff = {
+          -- Notes on code actions: https://github.com/astral-sh/ruff-lsp/issues/119#issuecomment-1595628355
+          -- Get isort like behavior: https://github.com/astral-sh/ruff/issues/8926#issuecomment-1834048218
+          commands = {
+            RuffAutofix = {
+              function()
+                vim.lsp.buf.execute_command {
+                  command = 'ruff.applyAutofix',
+                  arguments = {
+                    { uri = vim.uri_from_bufnr(0) },
+                  },
+                }
+              end,
+              description = 'Ruff: Fix all auto-fixable problems',
+            },
+            RuffOrganizeImports = {
+              function()
+                vim.lsp.buf.execute_command {
+                  command = 'ruff.applyOrganizeImports',
+                  arguments = {
+                    { uri = vim.uri_from_bufnr(0) },
+                  },
+                }
+              end,
+              description = 'Ruff: Format imports',
+            },
+          },
+        },
+        jsonls = {},
+        sqlls = {},
+        terraformls = {},
+        yamlls = {},
+        bashls = {},
+        dockerls = {},
+        docker_compose_language_service = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -726,47 +846,6 @@ require('lazy').setup({
         },
       }
     end,
-  },
-
-  { -- Autoformat
-    'stevearc/conform.nvim',
-    event = { 'BufWritePre' },
-    cmd = { 'ConformInfo' },
-    keys = {
-      {
-        '<leader>f',
-        function()
-          require('conform').format { async = true, lsp_format = 'fallback' }
-        end,
-        mode = '',
-        desc = '[F]ormat buffer',
-      },
-    },
-    opts = {
-      notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
-        if disable_filetypes[vim.bo[bufnr].filetype] then
-          return nil
-        else
-          return {
-            timeout_ms = 500,
-            lsp_format = 'fallback',
-          }
-        end
-      end,
-      formatters_by_ft = {
-        lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
-      },
-    },
   },
 
   { -- Autocompletion
@@ -936,7 +1015,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'python', 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -966,17 +1045,18 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
@@ -1003,6 +1083,37 @@ require('lazy').setup({
     },
   },
 })
+
+-- Add custom keymaps
+vim.api.nvim_set_keymap(
+  'n',
+  '<localleader>sa',
+  ':r! sn_case_with_comments.py -n %:t:r -a<CR>',
+  { desc = 'Get all comments for this case', noremap = true, silent = false }
+)
+vim.api.nvim_set_keymap(
+  'n',
+  '<localleader>sb',
+  ':r ! vimwiki-cal.sh -n 7 -d 2025-',
+  { desc = 'Add appointments for calendar week', noremap = true, silent = false }
+)
+vim.api.nvim_set_keymap('n', '<localleader>sc', ':r! sn_case_with_comments.py -n %:t:r -f ', { desc = 'Get new comments', noremap = true, silent = false })
+vim.api.nvim_set_keymap(
+  'n',
+  '<localleader>si',
+  ":r! sn_interloc_overview.py<CR>:put ='Last updated: '.strftime('%Y-%m-%d %H:%M:%S')<CR>",
+  { desc = 'Get open case list', noremap = true, silent = false }
+)
+vim.api.nvim_set_keymap(
+  'n',
+  '<localleader>st',
+  ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2025-" <CR>',
+  { desc = 'Add today appointments', noremap = true, silent = false }
+)
+vim.api.nvim_set_keymap('n', '<localleader>sv', ':r ! update_frontmatter.py %<CR>:e!<CR>', { desc = 'Update frontmatter', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
