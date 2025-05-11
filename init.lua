@@ -677,7 +677,8 @@ require('lazy').setup({
       vim.diagnostic.config {
         severity_sort = true,
         float = { border = 'rounded', source = 'if_many' },
-        underline = { severity = vim.diagnostic.severity.ERROR },
+        -- underline = { severity = vim.diagnostic.severity.ERROR },
+        underline = true,
         signs = vim.g.have_nerd_font and {
           text = {
             [vim.diagnostic.severity.ERROR] = '󰅚 ',
@@ -724,44 +725,7 @@ require('lazy').setup({
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
-
-        lua_ls = {
-          -- cmd = { ... },
-          -- filetypes = { ... },
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
-        pylsp = {
-          settings = {
-            pylsp = {
-              plugins = {
-                pyflakes = { enabled = false },
-                pycodestyle = { enabled = false },
-                autopep8 = { enabled = false },
-                yapf = { enabled = false },
-                mccabe = { enabled = false },
-                pylsp_mypy = { enabled = false },
-                pylsp_black = { enabled = false },
-                pylsp_isort = { enabled = false },
-              },
-            },
-          },
-        },
-        -- basedpyright = {
-        --   -- Config options: https://github.com/DetachHead/basedpyright/blob/main/docs/settings.md
+        --    https://github.com/pmizio///github.com/DetachHead/basedpyright/blob/main/docs/settings.md
         --   settings = {
         --     basedpyright = {
         --       disableOrganizeImports = true, -- Using Ruff's import organizer
@@ -881,6 +845,7 @@ require('lazy').setup({
         opts = {},
       },
       'folke/lazydev.nvim',
+      'folke/lsp-colors.nvim',
     },
     --- @module 'blink.cmp'
     --- @type blink.cmp.Config
@@ -972,7 +937,6 @@ require('lazy').setup({
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
-
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
@@ -1115,6 +1079,7 @@ vim.api.nvim_set_keymap('n', '<localleader>sv', ':r ! update_frontmatter.py %<CR
 vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
 vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
 vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<leader>cb', ':lua vim.lsp.buf.code_action()<CR>', { desc = 'Code Action' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
