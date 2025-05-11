@@ -166,7 +166,6 @@ vim.opt.confirm = true
 vim.opt.backspace = '2'
 vim.opt.showcmd = true
 vim.opt.laststatus = 2
-vim.opt.cursorline = true
 vim.opt.autoread = true
 
 -- use spaces for tabs
@@ -798,6 +797,7 @@ require('lazy').setup({
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+        automatic_enable = true,
         automatic_installation = false,
         handlers = {
           function(server_name)
@@ -1031,21 +1031,22 @@ require('lazy').setup({
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-    icons = vim.g.have_nerd_font and {} or {
-      cmd = '⌘',
-      config = '🛠',
-      event = '📅',
-      ft = '📂',
-      init = '⚙',
-      keys = '🗝',
-      plugin = '🔌',
-      runtime = '💻',
-      require = '🌙',
-      source = '📄',
-      start = '🚀',
-      task = '📌',
-      lazy = '💤 ',
-    },
+    icons = {},
+    -- icons = vim.g.have_nerd_font and {} or {
+    --   cmd = '⌘',
+    --   config = '🛠',
+    --   event = '📅',
+    --   ft = '📂',
+    --   init = '⚙',
+    --   keys = '🗝',
+    --   plugin = '🔌',
+    --   runtime = '💻',
+    --   require = '🌙',
+    --   source = '📄',
+    --   start = '🚀',
+    --   task = '📌',
+    --   lazy = '💤 ',
+    -- },
   },
 })
 
@@ -1079,7 +1080,6 @@ vim.api.nvim_set_keymap('n', '<localleader>sv', ':r ! update_frontmatter.py %<CR
 vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
 vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
 vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<leader>cb', ':lua vim.lsp.buf.code_action()<CR>', { desc = 'Code Action' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
