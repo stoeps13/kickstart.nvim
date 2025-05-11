@@ -724,6 +724,43 @@ require('lazy').setup({
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
+        --    https://github.com/pmizio/typescript-tools.nvim
+        --
+        -- But for many setups, the LSP (`ts_ls`) will work just fine
+        -- ts_ls = {},
+        --
+        lua_ls = {
+          -- cmd = { ... },
+          -- filetypes = { ... },
+          -- capabilities = {},
+          settings = {
+            Lua = {
+              completion = {
+                callSnippet = 'Replace',
+              },
+              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+              -- diagnostics = { disable = { 'missing-fields' } },
+            },
+          },
+        },
+        pylsp = {
+          settings = {
+            pylsp = {
+              plugins = {
+                pyflakes = { enabled = false },
+                pycodestyle = { enabled = false },
+                autopep8 = { enabled = false },
+                yapf = { enabled = false },
+                mccabe = { enabled = false },
+                pylsp_mypy = { enabled = false },
+                pylsp_black = { enabled = false },
+                pylsp_isort = { enabled = false },
+              },
+            },
+          },
+        },
+        -- basedpyright = {
+        --   -- Config options: https://github.com/DetachHead/basedpyright/blob/main/docs/settings.md
         --    https://github.com/pmizio///github.com/DetachHead/basedpyright/blob/main/docs/settings.md
         --   settings = {
         --     basedpyright = {
@@ -774,6 +811,53 @@ require('lazy').setup({
         bashls = {},
         dockerls = {},
         docker_compose_language_service = {},
+        --[[
+        ltex_plus = {
+          -- NOTE: This is not working, ltex_plus is installed, but is only using default configuration
+          settings = {
+            ltex = {
+              enabled = true,
+              checkFrequency = 'save',
+              language = 'en',
+              sentenceCacheSize = 2000,
+              additionalRules = {
+                enablePickyRules = true,
+                motherTongue = 'de-DE',
+              },
+              enabledRules = {
+                en = {
+                  'EN_CONSISTENT_APOS',
+                },
+              },
+              disabledRules = {
+                en = {
+                  'WHITELIST_RULE',
+                  'DASH_RULE',
+                  'TWO_HYPHENS',
+                  'CHANGE',
+                  'ISSUE',
+                  'CHECK',
+                  'ACTUALLY',
+                  'CONSISTENT',
+                },
+              },
+              dictionary = {
+                en = {
+                  'CryptPad',
+                  'Stoettner',
+                  'J2EE',
+                  'OpenSearch',
+                },
+                de = {
+                  'Stoettner',
+                  'J2EE',
+                  'OpenSearch',
+                },
+              },
+            },
+          },
+        },
+        --]]
       }
 
       -- Ensure the servers and tools above are installed
@@ -792,6 +876,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        -- 'ltex_plus',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -1016,7 +1101,6 @@ require('lazy').setup({
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns',
-
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
