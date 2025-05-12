@@ -343,7 +343,7 @@ require('lazy').setup({
   -- Then, because we use the `opts` key (recommended), the configuration runs
   -- after the plugin has been loaded as `require(MODULE).setup(opts)`.
 
-  { -- Useful plugin to show you pending keybinds.
+  {                     -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     opts = {
@@ -424,7 +424,7 @@ require('lazy').setup({
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
       -- Useful for getting pretty icons, but requires a Nerd Font.
-      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
+      { 'nvim-tree/nvim-web-devicons',            enabled = vim.g.have_nerd_font },
     },
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -532,7 +532,7 @@ require('lazy').setup({
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.
-      { 'j-hui/fidget.nvim', opts = {} },
+      { 'j-hui/fidget.nvim',       opts = {} },
 
       -- Allows extra capabilities provided by blink.cmp
       'saghen/blink.cmp',
@@ -811,7 +811,6 @@ require('lazy').setup({
         bashls = {},
         dockerls = {},
         docker_compose_language_service = {},
-        --[[
         ltex_plus = {
           -- NOTE: This is not working, ltex_plus is installed, but is only using default configuration
           settings = {
@@ -857,7 +856,6 @@ require('lazy').setup({
             },
           },
         },
-        --]]
       }
 
       -- Ensure the servers and tools above are installed
@@ -874,10 +872,7 @@ require('lazy').setup({
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-        -- 'ltex_plus',
-      })
+      vim.list_extend(ensure_installed, {})
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
@@ -1147,7 +1142,8 @@ vim.api.nvim_set_keymap(
   ':r ! vimwiki-cal.sh -n 7 -d 2025-',
   { desc = 'Add appointments for calendar week', noremap = true, silent = false }
 )
-vim.api.nvim_set_keymap('n', '<localleader>sc', ':r! sn_case_with_comments.py -n %:t:r -f ', { desc = 'Get new comments', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>sc', ':r! sn_case_with_comments.py -n %:t:r -f ',
+  { desc = 'Get new comments', noremap = true, silent = false })
 vim.api.nvim_set_keymap(
   'n',
   '<localleader>si',
@@ -1160,10 +1156,14 @@ vim.api.nvim_set_keymap(
   ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2025-" <CR>',
   { desc = 'Add today appointments', noremap = true, silent = false }
 )
-vim.api.nvim_set_keymap('n', '<localleader>sv', ':r ! update_frontmatter.py %<CR>:e!<CR>', { desc = 'Update frontmatter', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>sv', ':r ! update_frontmatter.py %<CR>:e!<CR>',
+  { desc = 'Update frontmatter', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>',
+  { desc = 'New Zettel', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>',
+  { desc = 'Open Zettel', noremap = true, silent = false })
+vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>',
+  { desc = 'Search Zettel', noremap = true, silent = false })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
