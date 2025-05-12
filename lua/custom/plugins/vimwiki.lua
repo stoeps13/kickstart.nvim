@@ -71,8 +71,7 @@ return {
         ['```sql'] = { parser = 'sql' },
       },
     }
-    vim.g.nv_search_paths = { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases',
-      '/var/home/stoeps/vimwiki/archive' }
+    vim.g.nv_search_paths = { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases', '/var/home/stoeps/vimwiki/archive' }
     vim.g.zettel_format = '%y%m%d-%file_no'
     -- vim.g.zettel_default_mappings = 0
     vim.g.zettel_options = {
@@ -92,7 +91,7 @@ return {
       \ "## Meetings", "",
       \ "## Logbook",  "",
       \ "## Tasks", "",
-      \ "### Urgent tasks | +OVERDUE or +urgent | +urgent", "",
+      \ "### Urgent tasks | +OVERDUE or +urgent or scheduled:today | +urgent", "",
       \ "### Tasks completed today | status:completed end:" . split(expand('%:r'), '/')[-1], ""])
     ]]
     vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]] })
