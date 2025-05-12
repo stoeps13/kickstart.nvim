@@ -94,84 +94,79 @@ vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
--- See `:help vim.opt`
+-- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
 
 -- Make line numbers default
-vim.opt.number = true
+vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
-vim.opt.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
-vim.opt.mouse = ''
+vim.o.mouse = ''
 
 -- Don't show the mode, since it's already in the status line
-vim.opt.showmode = false
+vim.o.showmode = false
 
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
 vim.schedule(function()
-  vim.opt.clipboard = 'unnamedplus'
+  vim.o.clipboard = 'unnamedplus'
 end)
 
 -- Enable break indent
-vim.opt.breakindent = true
+vim.o.breakindent = true
 
 -- Save undo history
-vim.opt.undofile = true
+vim.o.undofile = true
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
-vim.opt.ignorecase = true
-vim.opt.smartcase = true
+vim.o.ignorecase = true
+vim.o.smartcase = true
 
 -- Keep signcolumn on by default
-vim.opt.signcolumn = 'yes'
+vim.o.signcolumn = 'yes'
 
 -- Decrease update time
-vim.opt.updatetime = 250
+vim.o.updatetime = 250
 
 -- Decrease mapped sequence wait time
-vim.opt.timeoutlen = 300
+vim.o.timeoutlen = 300
 
 -- Configure how new splits should be opened
-vim.opt.splitright = true
-vim.opt.splitbelow = true
+vim.o.splitright = true
+vim.o.splitbelow = true
 
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
-vim.opt.list = true
+--
+--  Notice listchars is set using `vim.opt` instead of `vim.o`.
+--  It is very similar to `vim.o` but offers an interface for conveniently interacting with tables.
+--   See `:help lua-options`
+--   and `:help lua-options-guide`
+vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
-vim.opt.showbreak = '↪ '
+vim.opt.showbreak = ' ↪ '
 
 -- Preview substitutions live, as you type!
-vim.opt.inccommand = 'split'
+vim.o.inccommand = 'split'
 
 -- Show which line your cursor is on
-vim.opt.cursorline = true
+vim.o.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.opt.scrolloff = 10
+vim.o.scrolloff = 10
 
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
 -- See `:help 'confirm'`
-vim.opt.confirm = true
+vim.o.confirm = true
 
--- Custom options
-vim.opt.backspace = '2'
-vim.opt.showcmd = true
-vim.opt.laststatus = 2
-vim.opt.autoread = true
-
--- use spaces for tabs
-vim.opt.tabstop = 2
-vim.opt.shiftwidth = 2
-vim.opt.shiftround = true
 vim.opt.expandtab = true
 
 -- [[ Basic Keymaps ]]
@@ -218,52 +213,12 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
---  See `:help vim.highlight.on_yank()`
+--  See `:help vim.hl.on_yank()`
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
-    vim.highlight.on_yank()
-  end,
-})
-
-vim.api.nvim_create_autocmd({ 'BufEnter' }, {
-  pattern = { '*.*.*' },
-  callback = function()
-    local filename = vim.fn.expand '%:p'
-    local extensions = {}
-
-    -- Split the filename by dots to get extensions
-    for ext in string.gmatch(filename, '[^.]+') do
-      table.insert(extensions, ext)
-    end
-
-    -- If we have at least two extensions
-    if #extensions >= 2 then
-      local second_to_last_ext = extensions[#extensions - 1]
-
-      -- Map of extensions to filetypes
-      local extension_map = {
-        md = 'markdown',
-        sh = 'shell',
-        properties = 'toml',
-        ini = 'toml',
-        yaml = 'yaml',
-        yml = 'yaml',
-        toml = 'toml',
-        json = 'json',
-        py = 'python',
-        js = 'javascript',
-        html = 'html',
-        css = 'css',
-        -- Add more mappings as needed
-      }
-
-      -- Set filetype if we have a mapping for it
-      if extension_map[second_to_last_ext] then
-        vim.bo.filetype = extension_map[second_to_last_ext]
-      end
-    end
+    vim.hl.on_yank()
   end,
 })
 
@@ -276,8 +231,11 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   if vim.v.shell_error ~= 0 then
     error('Error cloning lazy.nvim:\n' .. out)
   end
-end ---@diagnostic disable-next-line: undefined-field
-vim.opt.rtp:prepend(lazypath)
+end
+
+---@type vim.Option
+local rtp = vim.opt.rtp
+rtp:prepend(lazypath)
 
 -- [[ Configure and install plugins ]]
 --
@@ -292,7 +250,7 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  -- 'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -348,7 +306,7 @@ require('lazy').setup({
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
-      -- this setting is independent of vim.opt.timeoutlen
+      -- this setting is independent of vim.o.timeoutlen
       delay = 0,
       icons = {
         -- set icon mappings to true if you have a Nerd Font
@@ -527,8 +485,8 @@ require('lazy').setup({
       -- Automatically install LSPs and related tools to stdpath for Neovim
       -- Mason must be loaded before its dependents so we need to set it up here.
       -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
-      { 'williamboman/mason.nvim', opts = {} },
-      'williamboman/mason-lspconfig.nvim',
+      { 'mason-org/mason.nvim', opts = {} },
+      'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.
@@ -676,8 +634,7 @@ require('lazy').setup({
       vim.diagnostic.config {
         severity_sort = true,
         float = { border = 'rounded', source = 'if_many' },
-        -- underline = { severity = vim.diagnostic.severity.ERROR },
-        underline = true,
+        underline = { severity = vim.diagnostic.severity.ERROR },
         signs = vim.g.have_nerd_font and {
           text = {
             [vim.diagnostic.severity.ERROR] = '󰅚 ',
@@ -729,6 +686,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -740,119 +698,6 @@ require('lazy').setup({
               },
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
-        pylsp = {
-          settings = {
-            pylsp = {
-              plugins = {
-                pyflakes = { enabled = false },
-                pycodestyle = { enabled = false },
-                autopep8 = { enabled = false },
-                yapf = { enabled = false },
-                mccabe = { enabled = false },
-                pylsp_mypy = { enabled = false },
-                pylsp_black = { enabled = false },
-                pylsp_isort = { enabled = false },
-              },
-            },
-          },
-        },
-        -- basedpyright = {
-        --   -- Config options: https://github.com/DetachHead/basedpyright/blob/main/docs/settings.md
-        --    https://github.com/pmizio///github.com/DetachHead/basedpyright/blob/main/docs/settings.md
-        --   settings = {
-        --     basedpyright = {
-        --       disableOrganizeImports = true, -- Using Ruff's import organizer
-        --       disableLanguageServices = false,
-        --       analysis = {
-        --         ignore = { '*' },                 -- Ignore all files for analysis to exclusively use Ruff for linting
-        --         typeCheckingMode = 'off',
-        --         diagnosticMode = 'openFilesOnly', -- Only analyze open files
-        --         useLibraryCodeForTypes = true,
-        --         autoImportCompletions = true,     -- whether pyright offers auto-import completions
-        --       },
-        --     },
-        --   },
-        -- },
-        ruff = {
-          -- Notes on code actions: https://github.com/astral-sh/ruff-lsp/issues/119#issuecomment-1595628355
-          -- Get isort like behavior: https://github.com/astral-sh/ruff/issues/8926#issuecomment-1834048218
-          commands = {
-            RuffAutofix = {
-              function()
-                vim.lsp.buf.execute_command {
-                  command = 'ruff.applyAutofix',
-                  arguments = {
-                    { uri = vim.uri_from_bufnr(0) },
-                  },
-                }
-              end,
-              description = 'Ruff: Fix all auto-fixable problems',
-            },
-            RuffOrganizeImports = {
-              function()
-                vim.lsp.buf.execute_command {
-                  command = 'ruff.applyOrganizeImports',
-                  arguments = {
-                    { uri = vim.uri_from_bufnr(0) },
-                  },
-                }
-              end,
-              description = 'Ruff: Format imports',
-            },
-          },
-        },
-        jsonls = {},
-        sqlls = {},
-        terraformls = {},
-        yamlls = {},
-        bashls = {},
-        dockerls = {},
-        docker_compose_language_service = {},
-        ltex_plus = {
-          -- NOTE: This is not working, ltex_plus is installed, but is only using default configuration
-          settings = {
-            ltex = {
-              enabled = true,
-              checkFrequency = 'save',
-              language = 'en',
-              sentenceCacheSize = 2000,
-              additionalRules = {
-                enablePickyRules = true,
-                motherTongue = 'de-DE',
-              },
-              enabledRules = {
-                en = {
-                  'EN_CONSISTENT_APOS',
-                },
-              },
-              disabledRules = {
-                en = {
-                  'WHITELIST_RULE',
-                  'DASH_RULE',
-                  'TWO_HYPHENS',
-                  'CHANGE',
-                  'ISSUE',
-                  'CHECK',
-                  'ACTUALLY',
-                  'CONSISTENT',
-                },
-              },
-              dictionary = {
-                en = {
-                  'CryptPad',
-                  'Stoettner',
-                  'J2EE',
-                  'OpenSearch',
-                },
-                de = {
-                  'Stoettner',
-                  'J2EE',
-                  'OpenSearch',
-                },
-              },
             },
           },
         },
@@ -872,12 +717,13 @@ require('lazy').setup({
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {})
+      vim.list_extend(ensure_installed, {
+        'stylua', -- Used to format Lua code
+      })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-        automatic_enable = true,
         automatic_installation = false,
         handlers = {
           function(server_name)
@@ -891,6 +737,47 @@ require('lazy').setup({
         },
       }
     end,
+  },
+
+  { -- Autoformat
+    'stevearc/conform.nvim',
+    event = { 'BufWritePre' },
+    cmd = { 'ConformInfo' },
+    keys = {
+      {
+        '<leader>f',
+        function()
+          require('conform').format { async = true, lsp_format = 'fallback' }
+        end,
+        mode = '',
+        desc = '[F]ormat buffer',
+      },
+    },
+    opts = {
+      notify_on_error = false,
+      format_on_save = function(bufnr)
+        -- Disable "format_on_save lsp_fallback" for languages that don't
+        -- have a well standardized coding style. You can add additional
+        -- languages here or re-enable it for the disabled ones.
+        local disable_filetypes = { c = true, cpp = true }
+        if disable_filetypes[vim.bo[bufnr].filetype] then
+          return nil
+        else
+          return {
+            timeout_ms = 500,
+            lsp_format = 'fallback',
+          }
+        end
+      end,
+      formatters_by_ft = {
+        lua = { 'stylua' },
+        -- Conform can also run multiple formatters sequentially
+        -- python = { "isort", "black" },
+        --
+        -- You can use 'stop_after_first' to run the first available formatter from the list
+        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      },
+    },
   },
 
   { -- Autocompletion
@@ -912,6 +799,7 @@ require('lazy').setup({
           return 'make install_jsregexp'
         end)(),
         dependencies = {
+          'rafamadriz/friendly-snippets',
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
@@ -922,10 +810,163 @@ require('lazy').setup({
           --   end,
           -- },
         },
+        config = function()
+          local ls = require 'luasnip'
+          require('luasnip.loaders.from_vscode').lazy_load()
+          require('luasnip.loaders.from_lua').lazy_load { paths = './lua/snippets' }
+          local s = ls.snippet
+          local t = ls.text_node
+          local i = ls.insert_node
+          local f = ls.function_node
+          local extras = require 'luasnip.extras'
+          local rep = extras.rep
+
+          local getPath = function()
+            local current_file_path = vim.fn.expand '%:p'
+
+            local parent_path = vim.fn.fnamemodify(current_file_path, ':h:h')
+
+            return parent_path
+          end
+
+          local makePath = function()
+            local current_file_path = vim.fn.expand '%:p'
+
+            local current_working_directory = vim.fn.getcwd()
+
+            local relative_path = vim.fn.fnamemodify(current_file_path, ':p:h')
+            relative_path = vim.fn.substitute(relative_path, '^' .. vim.fn.escape(current_working_directory, '/\\') .. '/', '', '')
+
+            return relative_path
+          end
+          local date = function()
+            return { os.date '%Y-%m-%d' }
+          end
+          local addDirect = function()
+            local current_file_path = vim.fn.expand '%:p'
+
+            local base_path_prefix = '/Users/<SET YOUR BASE PATH!!!>'
+
+            if vim.fn.stridx(current_file_path, base_path_prefix) == 0 then
+              local relative_path_without_base = vim.fn.substitute(current_file_path, '^' .. base_path_prefix, '', '')
+
+              local directory_only = vim.fn.fnamemodify(relative_path_without_base, ':h')
+
+              return '/' .. directory_only
+            end
+
+            return 'ERROR'
+          end
+
+          vim.keymap.set({ 'i', 's' }, '<C-k>', function()
+            if ls.expand_or_jumpable() then
+              ls.expand_or_jump()
+            end
+          end, { silent = true })
+
+          vim.keymap.set({ 'i', 's' }, '<C-j>', function()
+            if ls.jumpable(-1) then
+              ls.jump(-1)
+            end
+          end, { silent = true })
+
+          ls.add_snippets('vimwiki', {
+            s('meta', {
+              t { '---', 'title: ' },
+              i(1, 'note_title'),
+              t { '', 'author: ' },
+              i(2, 'author'),
+              t { '', 'date: ' },
+              f(date, {}),
+              t { '', 'categories: [' },
+              i(3, ''),
+              t { ']', 'lastmod: ' },
+              f(date, {}),
+              t { '', 'tags: [' },
+              i(4),
+              t { ']', 'comments: true', '---', '' },
+              i(0),
+            }),
+
+            s('home', {
+              t '[[/index|Home]]',
+            }),
+
+            s('to_back)', {
+              t '[[',
+              t '//',
+              f(getPath),
+              t '/',
+              i(1, 'back directory'),
+              t '|Back]]',
+            }),
+
+            s('h1', {
+              t '# ',
+              i(1, 'Name header'),
+            }),
+
+            s('h2', {
+              t '## ',
+              i(1, 'Name header'),
+            }),
+            s('h3', {
+              t '### ',
+              i(1, 'Name header'),
+            }),
+            s('h4', {
+              t '#### ',
+              i(1, 'Name header'),
+            }),
+
+            s('link', {
+              t '[',
+              i(1, 'Linktitle'),
+              t '](',
+              i(2, 'Location'),
+              t ')',
+            }),
+
+            s('todo_incomp', {
+              t '- [ ] ',
+              i(1, 'reminder'),
+            }),
+
+            s('todo_done', {
+              t '- [X] ',
+              i(1, 'reminder'),
+            }),
+
+            s('todo_notyet', {
+              t '- [.] ',
+              i(1, 'reminder'),
+            }),
+
+            s('comingsoon', {
+              t { '[[/index|Home]]', '', '' },
+              t 'Coming Soon...',
+            }),
+
+            s('InterlocUpdate', {
+              t { '## ' },
+              f(date, {}),
+              t { ' Interloc Call' },
+            }),
+            s('todo_open', {
+              t '## Open tasks | status:pending -VISIBLE',
+            }),
+          })
+          local keymap = vim.api.nvim_set_keymap
+          local opts = { noremap = true, silent = true }
+          keymap('i', '<c-j>', "<cmd>lua require'luasnip'.jump(1)<CR>", opts)
+          keymap('s', '<c-j>', "<cmd>lua require'luasnip'.jump(1)<CR>", opts)
+          keymap('i', '<c-k>', "<cmd>lua require'luasnip'.jump(-1)<CR>", opts)
+          keymap('s', '<c-k>', "<cmd>lua require'luasnip'.jump(-1)<CR>", opts)
+        end,
+
         opts = {},
       },
       'folke/lazydev.nvim',
-      'folke/lsp-colors.nvim',
     },
     --- @module 'blink.cmp'
     --- @type blink.cmp.Config
@@ -1017,6 +1058,7 @@ require('lazy').setup({
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
@@ -1060,7 +1102,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'python', 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1079,7 +1121,206 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
+  -- Vimwiki, daily notes, TIL
+  {
+    'vimwiki/vimwiki',
+    dependencies = {
+      'mattn/calendar-vim',
+      'WnP/vimwiki_markdown',
+      'michal-h21/vim-zettel',
+      'michal-h21/vimwiki-sync',
+      'majutsushi/tagbar',
+      'tools-life/taskwiki',
+      'junegunn/fzf',
+      'junegunn/fzf.vim',
+    },
+    init = function()
+      -- Default directory, syntax and file type,
+      -- symbols for spaces, auto re-index tags db
+      vim.g.vimwiki_list = {
+        {
+          path = '~/vimwiki/2025',
+          syntax = 'markdown',
+          ext = '.md',
+          links_space_char = '_',
+          path_html = '~/vimwiki/2025/site_html/',
+          custom_wiki2html = 'vimwiki_markdown',
+          auto_tags = 1,
+          auto_diary_index = 1,
+        },
+        {
+          path = '~/vimwiki/archive',
+          syntax = 'markdown',
+          ext = '.md',
+          links_space_char = '_',
+          path_html = '~/vimwiki/archive/site_html/',
+          custom_wiki2html = 'vimwiki_markdown',
+          auto_tags = 1,
+          auto_diary_index = 1,
+        },
+        {
+          path = '~/vimwiki/hcl-cases',
+          syntax = 'markdown',
+          ext = '.md',
+          links_space_char = '_',
+          path_html = '~/vimwiki/hcl-cases/site_html/',
+          custom_wiki2html = 'vimwiki_markdown',
+          auto_tags = 1,
+          auto_diary_index = 1,
+        },
+      }
+      vim.g.vimwiki_global_ext = 0
 
+      -- vim.g.markdown_folding = 1
+      -- vim.g.vimwiki_folding = 'syntax'
+      -- vim.g.vimwiki_header_type = '#'
+      -- vim.cmd [[
+      --    autocmd FileType vimwiki setlocal foldlevel=99
+      -- ]]
+      -- vim.g.vimwiki_fold_blank_lines = 0
+      -- Syntax highlighting for code blocks
+      vim.g.vimwiki_syntax_plugins = {
+        codeblock = {
+          ['```lua'] = { parser = 'lua' },
+          ['```python'] = { parser = 'python' },
+          ['```javascript'] = { parser = 'javascript' },
+          ['```bash'] = { parser = 'bash' },
+          ['```html'] = { parser = 'html' },
+          ['```css'] = { parser = 'css' },
+          ['```c'] = { parser = 'c' },
+          ['```sql'] = { parser = 'sql' },
+        },
+      }
+      vim.g.nv_search_paths = { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases', '/var/home/stoeps/vimwiki/archive' }
+      vim.g.zettel_format = '%y%m%d-%file_no'
+      -- vim.g.zettel_default_mappings = 0
+      vim.g.zettel_options = {
+        {
+          template = '~/vimwiki/template.tpl',
+          disable_front_matter = 1,
+        },
+      }
+      vim.g.zettel_date_format = '%Y-%m-%d'
+      vim.g.taskwiki_disable_concealcursor = true
+      vim.conceallevel = 0
+      vim.opt.conceallevel = 0
+      vim.cmd [[
+      autocmd BufNewFile ~/vimwiki/2025/diary/*.md
+      \ call append(0,[
+      \ "# " . split(expand('%:r'),'/')[-1], "",
+      \ "## Meetings", "",
+      \ "## Logbook",  "",
+      \ "## Tasks", "",
+      \ "### Urgent tasks | +OVERDUE or +urgent or scheduled:today | +urgent", "",
+      \ "### Tasks completed today | status:completed end:" . split(expand('%:r'), '/')[-1], ""])
+    ]]
+      vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]] })
+      vim.keymap.set('n', '<CR>', ':VimwikiFollowLink<CR>', {})
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>sa',
+        ':r! sn_case_with_comments.py -n %:t:r -a<CR>',
+        { desc = 'Get all comments for this case', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>sb',
+        ':r ! vimwiki-cal.sh -n 7 -d 2025-',
+        { desc = 'Add appointments for calendar week', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>sc',
+        ':r! sn_case_with_comments.py -n %:t:r -f ',
+        { desc = 'Get new comments', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>si',
+        ":r! sn_interloc_overview.py<CR>:put ='Last updated: '.strftime('%Y-%m-%d %H:%M:%S')<CR>",
+        { desc = 'Get open case list', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>st',
+        ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2025-" <CR>',
+        { desc = 'Add today appointments', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>sv',
+        ':r ! update_frontmatter.py %<CR>:e!<CR>',
+        { desc = 'Update frontmatter', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
+      vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
+      vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
+    end,
+  },
+  -- Better markdown rendering
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' },
+    ---@module 'render-markdown'
+    ---@type render.md.UserConfig
+    opts = {},
+    init = function()
+      vim.treesitter.language.register('markdown', 'vimwiki')
+      require('render-markdown').setup {
+        file_types = { 'markdown', 'vimwiki' },
+      }
+    end,
+  },
+  -- Paste images from clipboard
+  {
+    'HakonHarnes/img-clip.nvim',
+    event = 'VeryLazy',
+    opts = {
+      -- add options here
+      default = {
+        dir_path = 'assets', ---@type string | fun(): string
+        extension = 'png', ---@type string | fun(): string
+        file_name = '%Y%m%d-%H%M%S', ---@type string | fun(): string
+        use_absolute_path = false, ---@type boolean | fun(): boolean
+        prompt_for_file_name = false,
+        relative_to_current_file = true,
+      },
+      filetypes = {
+        markdown = {
+          url_encode_path = true, ---@type boolean | fun(): boolean
+          template = '![$FILE_NAME]($FILE_PATH)', ---@type string | fun(context: table): string
+          download_images = false, ---@type boolean | fun(): boolean
+        },
+
+        html = {
+          template = '<img src="$FILE_PATH" alt="$FILE_NAME">', ---@type string | fun(context: table): string
+        },
+
+        asciidoc = {
+          dir_path = 'images', ---@type string | fun(): string
+          template = 'image::$FILE_NAME[width=80%, alt="$FILE_NAME"]', ---@type string | fun(context: table): string
+        },
+      },
+      -- or leave it empty to use the default settings
+    },
+    keys = {
+      -- suggested keymap
+      { '<leader>p', '<cmd>PasteImage<cr>', desc = 'Paste image from system clipboard' },
+    },
+  },
+  -- Markdown preview, open in browser
+  {
+    'iamcco/markdown-preview.nvim',
+    cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
+    build = 'cd app && yarn install',
+    keys = {
+      { '<leader>v', '<cmd>MarkdownPreview<cr>', desc = 'Preview markdown' },
+    },
+    init = function()
+      vim.g.mkdp_filetypes = { 'markdown' }
+    end,
+    ft = { 'markdown' },
+  },
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -1090,75 +1331,46 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  require 'kickstart.plugins.indent_line',
+  -- require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
-  require 'kickstart.plugins.debug',
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
-  require 'kickstart.plugins.gitsigns',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  { import = 'custom.plugins' },
+  -- { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, {
+  ui = {},
+  --[[
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-    icons = {},
-    -- icons = vim.g.have_nerd_font and {} or {
-    --   cmd = '⌘',
-    --   config = '🛠',
-    --   event = '📅',
-    --   ft = '📂',
-    --   init = '⚙',
-    --   keys = '🗝',
-    --   plugin = '🔌',
-    --   runtime = '💻',
-    --   require = '🌙',
-    --   source = '📄',
-    --   start = '🚀',
-    --   task = '📌',
-    --   lazy = '💤 ',
-    -- },
+    icons = vim.g.have_nerd_font and {} or {
+      cmd = '⌘',
+      config = '🛠',
+      event = '📅',
+      ft = '📂',
+      init = '⚙',
+      keys = '🗝',
+      plugin = '🔌',
+      runtime = '💻',
+      require = '🌙',
+      source = '📄',
+      start = '🚀',
+      task = '📌',
+      lazy = '💤 ',
+    },
   },
+  --]]
 })
-
--- Add custom keymaps
-vim.api.nvim_set_keymap(
-  'n',
-  '<localleader>sa',
-  ':r! sn_case_with_comments.py -n %:t:r -a<CR>',
-  { desc = 'Get all comments for this case', noremap = true, silent = false }
-)
-vim.api.nvim_set_keymap(
-  'n',
-  '<localleader>sb',
-  ':r ! vimwiki-cal.sh -n 7 -d 2025-',
-  { desc = 'Add appointments for calendar week', noremap = true, silent = false }
-)
-vim.api.nvim_set_keymap('n', '<localleader>sc', ':r! sn_case_with_comments.py -n %:t:r -f ', { desc = 'Get new comments', noremap = true, silent = false })
-vim.api.nvim_set_keymap(
-  'n',
-  '<localleader>si',
-  ":r! sn_interloc_overview.py<CR>:put ='Last updated: '.strftime('%Y-%m-%d %H:%M:%S')<CR>",
-  { desc = 'Get open case list', noremap = true, silent = false }
-)
-vim.api.nvim_set_keymap(
-  'n',
-  '<localleader>st',
-  ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2025-" <CR>',
-  { desc = 'Add today appointments', noremap = true, silent = false }
-)
-vim.api.nvim_set_keymap('n', '<localleader>sv', ':r ! update_frontmatter.py %<CR>:e!<CR>', { desc = 'Update frontmatter', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
-vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

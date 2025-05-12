@@ -2,8 +2,4 @@
 --  I promise not to create any merge conflicts in this directory :)
 --
 -- See the kickstart.nvim README for more information
--- Ansible
-return {
-  'mfussenegger/nvim-ansible',
-  'bullets-vim/bullets.vim',
-}
+return {}
