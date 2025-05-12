@@ -91,7 +91,7 @@ return {
       \ "# " . split(expand('%:r'),'/')[-1], "",
       \ "## Meetings", "",
       \ "## Logbook",  "",
-      \ "## Tasks || project:INBOX", "",
+      \ "## Tasks", "",
       \ "### Urgent tasks | +OVERDUE or +urgent | +urgent", "",
       \ "### Tasks completed today | status:completed end:" . split(expand('%:r'), '/')[-1], ""])
     ]]
