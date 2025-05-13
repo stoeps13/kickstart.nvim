@@ -701,6 +701,49 @@ require('lazy').setup({
             },
           },
         },
+        vale = {},
+        ltex_plus = {
+          settings = {
+            ltex = {
+              language = 'en_US',
+              checkFrequency = 'save',
+              sentenceCacheSize = 2000,
+              additionalRules = {
+                enablePickyRules = true,
+                motherTongue = 'de_DE',
+              },
+              enabledRules = {
+                en = { 'EN_CONSISTENT_APOS' },
+              },
+              disabledRules = {
+                en = { 'WHITESPACE_RULE', 'DASH_RULE', 'TWO_HYPHENS', 'CHANGE', 'ISSUE', 'CHECK', 'ACTUALLY', 'CONSISTENT' },
+              },
+              dictionary = {
+                de = {
+                  'CryptPad',
+                  'Chouhartem',
+                  -- field names
+                  'authors',
+                  'categories',
+                  'created',
+                  'updated',
+                  'title',
+                  'meta',
+                  'CryptPad',
+                  'Stoettner',
+                  'OpenSearch',
+                  'Vegard',
+                },
+                en = {
+                  'CryptPad',
+                  'Stoettner',
+                  'OpenSearch',
+                  'Vegard',
+                },
+              },
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -771,6 +814,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        python = { 'black' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
