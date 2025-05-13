@@ -1,4 +1,4 @@
-# kickstart.nvim
+# `kickstart.nvim`
 
 ## Introduction
 
@@ -6,7 +6,7 @@ A starting point for Neovim that is:
 
 * Small
 * Single-file
-* Completely Documented
+* Fully documented
 
 **NOT** a Neovim distribution, but instead a starting point for your configuration.
 
