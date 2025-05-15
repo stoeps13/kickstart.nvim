@@ -248,6 +248,7 @@ rtp:prepend(lazypath)
 --    :Lazy update
 --
 -- NOTE: Here is where you install your plugins.
+
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
@@ -701,49 +702,9 @@ require('lazy').setup({
             },
           },
         },
+        tinymist = {},
         vale = {},
-        ltex_plus = {
-          settings = {
-            ltex = {
-              language = 'en_US',
-              checkFrequency = 'save',
-              sentenceCacheSize = 2000,
-              additionalRules = {
-                enablePickyRules = true,
-                motherTongue = 'de_DE',
-              },
-              enabledRules = {
-                en = { 'EN_CONSISTENT_APOS' },
-              },
-              disabledRules = {
-                en = { 'WHITESPACE_RULE', 'DASH_RULE', 'TWO_HYPHENS', 'CHANGE', 'ISSUE', 'CHECK', 'ACTUALLY', 'CONSISTENT' },
-              },
-              dictionary = {
-                de = {
-                  'CryptPad',
-                  'Chouhartem',
-                  -- field names
-                  'authors',
-                  'categories',
-                  'created',
-                  'updated',
-                  'title',
-                  'meta',
-                  'CryptPad',
-                  'Stoettner',
-                  'OpenSearch',
-                  'Vegard',
-                },
-                en = {
-                  'CryptPad',
-                  'Stoettner',
-                  'OpenSearch',
-                  'Vegard',
-                },
-              },
-            },
-          },
-        },
+        ltex_plus = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -1299,6 +1260,19 @@ require('lazy').setup({
       vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
       vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
       vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>cf',
+        '<cmd>let @+ = expand("%:t")<CR>',
+        { desc = '[C]opy [f]ilename into clipboard', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>cr',
+        '<cmd>let @+ = expand("%")<CR>',
+        { desc = '[C]opy filename with [r]elative path', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap('n', '<localleader>q', '<cmd>bd<CR>', { desc = 'Close Buffer', noremap = true, silent = false })
     end,
   },
   -- Better markdown rendering

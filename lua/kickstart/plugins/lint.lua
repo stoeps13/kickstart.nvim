@@ -24,6 +24,9 @@ return {
           ruby = { 'ruby' },
           terraform = { 'tflint' },
           text = { 'vale' },
+          sh = { 'shellcheck' },
+          vimwiki = { 'vale' },
+          --typst = { 'tinymist' },
         }
       --
       -- You can disable the default linters by setting their filetypes to nil:
