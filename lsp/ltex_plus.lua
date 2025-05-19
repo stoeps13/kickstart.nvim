@@ -1,4 +1,5 @@
 local language_id_mapping = {
+  adoc = 'asciidoc',
   bib = 'bibtex',
   pandoc = 'markdown',
   plaintex = 'tex',
@@ -6,6 +7,7 @@ local language_id_mapping = {
   rst = 'restructuredtext',
   tex = 'latex',
   text = 'plaintext',
+  md = 'markdown',
 }
 
 local function get_language_id(_, filetype)
@@ -15,21 +17,22 @@ end
 return {
   cmd = { 'ltex-ls-plus' },
   filetypes = {
+    'asciidoc',
+    'gitcommit',
+    'latex',
+    'mail',
     'markdown',
     'pandoc',
-    'latex',
-    'text',
-    'norg',
-    'gitcommit',
-    'jj',
     'rst',
+    'text',
     'typst',
+    'vimwiki',
   },
   get_language_id = get_language_id,
   single_file_support = true,
   settings = {
     ltex = {
-      language = 'en_US',
+      language = 'en-US',
       checkFrequency = 'save',
       sentenceCacheSize = 2000,
       additionalRules = {

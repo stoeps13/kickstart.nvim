@@ -703,8 +703,8 @@ require('lazy').setup({
           },
         },
         tinymist = {},
+        prettier = {},
         vale = {},
-        ltex_plus = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -783,6 +783,13 @@ require('lazy').setup({
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
       },
     },
+  },
+  -- Hardtime
+  {
+    'm4xshen/hardtime.nvim',
+    lazy = false,
+    dependencies = { 'MunifTanjim/nui.nvim' },
+    opts = {},
   },
 
   { -- Autocompletion
@@ -1126,6 +1133,27 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
+  -- Typst
+  {
+    'kaarmu/typst.vim',
+    ft = 'typst',
+    lazy = false,
+    init = function()
+      -- Function to open a terminal with typst watch command
+      local function typst_watch()
+        vim.cmd 'vsp'
+        vim.cmd 'vertical resize 20'
+        vim.cmd('terminal typst watch ' .. vim.fn.expand '%:')
+        vim.cmd 'norm! <C-w>h'
+      end
+
+      -- Set keymappings for Typst-related functions
+      vim.keymap.set('n', '<leader>sc', typst_watch, { silent = true, desc = 'Watch Typst file' })
+      vim.keymap.set('n', '<leader>sr', function()
+        vim.cmd('silent !zathura --fork ' .. vim.fn.expand '%:p:r' .. '.pdf &')
+      end, { silent = true, desc = 'Open PDF in Zathura' })
+    end,
+  },
   -- Vimwiki, daily notes, TIL
   {
     'vimwiki/vimwiki',
@@ -1173,6 +1201,16 @@ require('lazy').setup({
           auto_tags = 1,
           auto_diary_index = 1,
         },
+        {
+          path = '~/vimwiki/pentest',
+          syntax = 'markdown',
+          ext = '.md',
+          links_space_char = '_',
+          path_html = '~/vimwiki/pentest/site_html/',
+          custom_wiki2html = 'vimwiki_markdown',
+          auto_tags = 1,
+          auto_diary_index = 1,
+        },
       }
       vim.g.vimwiki_global_ext = 0
 
@@ -1196,7 +1234,8 @@ require('lazy').setup({
           ['```sql'] = { parser = 'sql' },
         },
       }
-      vim.g.nv_search_paths = { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases', '/var/home/stoeps/vimwiki/archive' }
+      vim.g.nv_search_paths =
+        { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases', '/var/home/stoeps/vimwiki/pentest', '/var/home/stoeps/vimwiki/archive' }
       vim.g.zettel_format = '%y%m%d-%file_no'
       -- vim.g.zettel_default_mappings = 0
       vim.g.zettel_options = {

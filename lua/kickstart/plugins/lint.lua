@@ -19,6 +19,7 @@ return {
           inko = { 'inko' },
           janet = { 'janet' },
           json = { 'jsonlint' },
+          html = { 'htmlhint' },
           markdown = { 'vale' },
           rst = { 'vale' },
           ruby = { 'ruby' },
