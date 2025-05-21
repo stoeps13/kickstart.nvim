@@ -704,7 +704,6 @@ require('lazy').setup({
         },
         tinymist = {},
         vale = {},
-        ltex_plus = {},
       }
 
       -- Ensure the servers and tools above are installed
