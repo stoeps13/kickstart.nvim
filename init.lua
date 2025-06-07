@@ -785,13 +785,13 @@ require('lazy').setup({
     },
   },
   -- Hardtime
-  {
-    'm4xshen/hardtime.nvim',
-    lazy = false,
-    dependencies = { 'MunifTanjim/nui.nvim' },
-    opts = {},
-  },
-
+  -- {
+  --   'm4xshen/hardtime.nvim',
+  --   lazy = false,
+  --   dependencies = { 'MunifTanjim/nui.nvim' },
+  --   opts = {},
+  -- },
+  --
   { -- Autocompletion
     'saghen/blink.cmp',
     event = 'VimEnter',
@@ -1165,6 +1165,7 @@ require('lazy').setup({
       -- or leave it empty to use the default settings
       -- refer to the configuration section below
       dashboard = { enabled = true },
+      dim = { enabled = true },
       explorer = { enabled = true },
       indent = { enabled = true },
       input = { enabled = true },
@@ -1173,6 +1174,7 @@ require('lazy').setup({
       notifier = { enabled = true },
       quickfile = { enabled = true },
       scope = { enabled = true },
+      zen = { enabled = true },
     },
   },
   -- Vimwiki, daily notes, TIL
