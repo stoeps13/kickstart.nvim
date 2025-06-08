@@ -962,7 +962,8 @@ require('lazy').setup({
             s('InterlocUpdate', {
               t { '## ' },
               f(date, {}),
-              t { ' Interloc Call' },
+              t { ' Interloc Call', '* ' },
+              i(1, 'updates'),
             }),
             s('todo_open', {
               t '## Open tasks | status:pending -VISIBLE',
@@ -1045,7 +1046,12 @@ require('lazy').setup({
       signature = { enabled = true },
     },
   },
-
+  {
+    'abhinandh-s/typst-snippets',
+    config = function()
+      require('snippets').setup()
+    end,
+  },
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
     -- change the command in the config to whatever the name of that colorscheme is.
