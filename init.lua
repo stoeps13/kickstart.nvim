@@ -1178,6 +1178,10 @@ require('lazy').setup({
       words = { enabled = true },
     },
   },
+  -- Restore sessions
+  {
+    'tpope/vim-obsession',
+  },
   -- Vimwiki, daily notes, TIL
   {
     'vimwiki/vimwiki',
