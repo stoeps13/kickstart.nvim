@@ -220,7 +220,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.hl.on_yank()
   end,
 })
-
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -584,7 +583,7 @@ require('lazy').setup({
             if vim.fn.has 'nvim-0.11' == 1 then
               return client:supports_method(method, bufnr)
             else
-              return client.supports_method(method, { bufnr = bufnr })
+              return client.supports_method(client, method, bufnr)
             end
           end
 
@@ -750,6 +749,7 @@ require('lazy').setup({
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
+        automatic_enable = true,
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -846,13 +846,11 @@ require('lazy').setup({
         config = function()
           local ls = require 'luasnip'
           require('luasnip.loaders.from_vscode').lazy_load()
-          require('luasnip.loaders.from_lua').lazy_load { paths = './lua/snippets' }
+          require('luasnip.loaders.from_lua').lazy_load { paths = { './lua/snippets' } }
           local s = ls.snippet
           local t = ls.text_node
           local i = ls.insert_node
           local f = ls.function_node
-          local extras = require 'luasnip.extras'
-          local rep = extras.rep
 
           local getPath = function()
             local current_file_path = vim.fn.expand '%:p'
@@ -862,33 +860,8 @@ require('lazy').setup({
             return parent_path
           end
 
-          local makePath = function()
-            local current_file_path = vim.fn.expand '%:p'
-
-            local current_working_directory = vim.fn.getcwd()
-
-            local relative_path = vim.fn.fnamemodify(current_file_path, ':p:h')
-            relative_path = vim.fn.substitute(relative_path, '^' .. vim.fn.escape(current_working_directory, '/\\') .. '/', '', '')
-
-            return relative_path
-          end
           local date = function()
             return { os.date '%Y-%m-%d' }
-          end
-          local addDirect = function()
-            local current_file_path = vim.fn.expand '%:p'
-
-            local base_path_prefix = '/Users/<SET YOUR BASE PATH!!!>'
-
-            if vim.fn.stridx(current_file_path, base_path_prefix) == 0 then
-              local relative_path_without_base = vim.fn.substitute(current_file_path, '^' .. base_path_prefix, '', '')
-
-              local directory_only = vim.fn.fnamemodify(relative_path_without_base, ':h')
-
-              return '/' .. directory_only
-            end
-
-            return 'ERROR'
           end
 
           vim.keymap.set({ 'i', 's' }, '<C-k>', function()
@@ -1181,11 +1154,86 @@ require('lazy').setup({
       end, { silent = true, desc = 'Open PDF in Zathura' })
     end,
   },
+  -- todo.txt
+  {
+    'arnarg/todotxt.nvim',
+    requires = { 'MunifTanjim/nui.nvim' },
+    init = function()
+      require('todotxt-nvim').setup {
+        todo_file = '~/vimwiki/2025/diary/todo.txt',
+        keymap = {
+          quit = 'q',
+          toggle_metadata = 'm',
+          delete_task = 'dd',
+          complete_task = 'cc',
+          edit_task = 'ee',
+        },
+        alternative_priority = {
+          A = 'now',
+          B = 'next',
+          C = 'today',
+          D = 'this week',
+          E = 'next week',
+        },
+        sidebar = {
+          width = 80,
+          position = 'right', -- default: "right"
+        },
+        highlights = {
+          project = {
+            fg = 'magenta',
+            bg = 'NONE',
+            style = 'NONE',
+          },
+          context = {
+            fg = 'cyan',
+            bg = 'NONE',
+            style = 'NONE',
+          },
+          date = {
+            fg = 'NONE',
+            bg = 'NONE',
+            style = 'underline',
+          },
+          done_task = {
+            fg = 'gray',
+            bg = 'NONE',
+            style = 'NONE',
+          },
+          priorities = {
+            A = {
+              fg = 'red',
+              bg = 'NONE',
+              style = 'bold',
+            },
+            B = {
+              fg = 'magenta',
+              bg = 'NONE',
+              style = 'bold',
+            },
+            C = {
+              fg = 'yellow',
+              bg = 'NONE',
+              style = 'bold',
+            },
+            D = {
+              fg = 'cyan',
+              bg = 'NONE',
+              style = 'bold',
+            },
+          },
+        },
+      }
+      vim.api.nvim_set_keymap('n', '<localleader>ta', ':ToDoTxtCapture<CR>', { desc = 'Add task to todo.txt', noremap = true, silent = false })
+      vim.api.nvim_set_keymap('n', '<localleader>ts', ':ToDoTxtTasksToggle<CR>', { desc = 'Toggle task sidebar', noremap = true, silent = false })
+    end,
+  },
   -- Snacks
   {
     'folke/snacks.nvim',
     priority = 1000,
     lazy = false,
+    ---@module 'snacks'
     ---@type snacks.Config
     opts = {
       -- your configuration comes here
@@ -1194,6 +1242,7 @@ require('lazy').setup({
       dashboard = { enabled = true },
       dim = { enabled = true },
       explorer = { enabled = true },
+      image = { enabled = true },
       indent = { enabled = true },
       input = { enabled = true },
       lazygit = { enabled = true },
@@ -1204,6 +1253,35 @@ require('lazy').setup({
       zen = { enabled = true },
     },
   },
+  -- Git merge
+  {
+    'akinsho/git-conflict.nvim',
+    version = '*',
+    config = true,
+    init = function()
+      require('git-conflict').setup {
+        default_commands = true,
+        default_mappings = false,
+        disable_diagnostics = false,
+        list_opener = 'copen',
+        highlights = {
+          incoming = 'DiffAdd',
+          current = 'DiffText',
+        },
+        debug = false,
+        vim.keymap.set('n', '<leader>co', '<Plug>(git-conflict-ours)'),
+        vim.keymap.set('n', '<leader>ct', '<Plug>(git-conflict-theirs)'),
+        vim.keymap.set('n', '<leader>cb', '<Plug>(git-conflict-both)'),
+        vim.keymap.set('n', '<leader>c0', '<Plug>(git-conflict-none)'),
+        vim.keymap.set('n', '<leader>[x', '<Plug>(git-conflict-prev-conflict)'),
+        vim.keymap.set('n', '<leader>]x', '<Plug>(git-conflict-next-conflict)'),
+      }
+    end,
+  },
+  -- Restore sessions
+  {
+    'tpope/vim-obsession',
+  },
   -- Vimwiki, daily notes, TIL
   {
     'vimwiki/vimwiki',
@@ -1213,7 +1291,7 @@ require('lazy').setup({
       'michal-h21/vim-zettel',
       'michal-h21/vimwiki-sync',
       'majutsushi/tagbar',
-      'tools-life/taskwiki',
+      --'tools-life/taskwiki',
       'junegunn/fzf',
       'junegunn/fzf.vim',
     },
@@ -1284,8 +1362,7 @@ require('lazy').setup({
           ['```sql'] = { parser = 'sql' },
         },
       }
-      vim.g.nv_search_paths =
-        { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases', '/var/home/stoeps/vimwiki/pentest', '/var/home/stoeps/vimwiki/archive' }
+      vim.g.nv_search_paths = { '~/vimwiki/2025', '~/vimwiki/hcl-cases', '~/vimwiki/pentest', '~/vimwiki/archive' }
       vim.g.zettel_format = '%y%m%d-%file_no'
       -- vim.g.zettel_default_mappings = 0
       vim.g.zettel_options = {
@@ -1298,23 +1375,45 @@ require('lazy').setup({
       vim.g.taskwiki_disable_concealcursor = true
       vim.conceallevel = 0
       vim.opt.conceallevel = 0
-      vim.cmd [[
-      autocmd BufNewFile ~/vimwiki/2025/diary/*.md
-      \ call append(0,[
-      \ "# " . split(expand('%:r'),'/')[-1], "",
-      \ "## Meetings", "",
-      \ "## Logbook",  "",
-      \ "## Tasks", "",
-      \ "### Urgent tasks | +OVERDUE or +urgent or scheduled:today | +urgent", "",
-      \ "### Tasks completed today | status:completed end:" . split(expand('%:r'), '/')[-1], ""])
-    ]]
-      vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]] })
-      vim.keymap.set('n', '<CR>', ':VimwikiFollowLink<CR>', {})
+      -- Add autocmd to create diary pages with different content than the template
+      local _vimwiki = vim.api.nvim_create_augroup('_vimwiki', { clear = true })
+      vim.api.nvim_create_autocmd({ 'BufNewFile' }, {
+        pattern = { '*/vimwiki/2025/diary/*.md' },
+        callback = function()
+          local filename = vim.fn.expand '%:r'
+          local path_parts = vim.fn.split(filename, '/')
+          local title = path_parts[#path_parts] -- get the last element
+          local lines = {
+            '# ' .. title,
+            '',
+            '## Meetings',
+            '',
+            '## Logbook',
+            '',
+          }
+          vim.api.nvim_buf_set_lines(0, 0, 0, false, lines)
+        end,
+        group = _vimwiki,
+      })
+      vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]], group = _vimwiki })
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'vimwiki',
+        callback = function()
+          vim.api.nvim_set_keymap('n', '<CR>', ':VimwikiFollowLink<CR>', {})
+        end,
+        group = _vimwiki,
+      })
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>sa',
         ':r! sn_case_with_comments.py -n %:t:r -a<CR>',
         { desc = 'Get all comments for this case', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>se',
+        ':r! sn_case_with_comments.py -n %:t:r -f ',
+        { desc = 'Get comments from date for this case', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
         'n',
@@ -1455,8 +1554,7 @@ require('lazy').setup({
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, {
-  ui = {},
-  --[[
+  -- ui = {},
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
@@ -1476,7 +1574,6 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
-  --]]
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
