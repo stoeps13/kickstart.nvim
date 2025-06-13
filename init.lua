@@ -1158,11 +1158,86 @@ require('lazy').setup({
       end, { silent = true, desc = 'Open PDF in Zathura' })
     end,
   },
+  -- todo.txt
+  {
+    'arnarg/todotxt.nvim',
+    requires = { 'MunifTanjim/nui.nvim' },
+    init = function()
+      require('todotxt-nvim').setup {
+        todo_file = '~/vimwiki/2025/diary/todo.txt',
+        keymap = {
+          quit = 'q',
+          toggle_metadata = 'm',
+          delete_task = 'dd',
+          complete_task = 'cc',
+          edit_task = 'ee',
+        },
+        alternative_priority = {
+          A = 'now',
+          B = 'next',
+          C = 'today',
+          D = 'this week',
+          E = 'next week',
+        },
+        sidebar = {
+          width = 80,
+          position = 'right', -- default: "right"
+        },
+        highlights = {
+          project = {
+            fg = 'magenta',
+            bg = 'NONE',
+            style = 'NONE',
+          },
+          context = {
+            fg = 'cyan',
+            bg = 'NONE',
+            style = 'NONE',
+          },
+          date = {
+            fg = 'NONE',
+            bg = 'NONE',
+            style = 'underline',
+          },
+          done_task = {
+            fg = 'gray',
+            bg = 'NONE',
+            style = 'NONE',
+          },
+          priorities = {
+            A = {
+              fg = 'red',
+              bg = 'NONE',
+              style = 'bold',
+            },
+            B = {
+              fg = 'magenta',
+              bg = 'NONE',
+              style = 'bold',
+            },
+            C = {
+              fg = 'yellow',
+              bg = 'NONE',
+              style = 'bold',
+            },
+            D = {
+              fg = 'cyan',
+              bg = 'NONE',
+              style = 'bold',
+            },
+          },
+        },
+      }
+      vim.api.nvim_set_keymap('n', '<localleader>ta', ':ToDoTxtCapture<CR>', { desc = 'Add task to todo.txt', noremap = true, silent = false })
+      vim.api.nvim_set_keymap('n', '<localleader>ts', ':ToDoTxtTasksToggle<CR>', { desc = 'Toggle task sidebar', noremap = true, silent = false })
+    end,
+  },
   -- Snacks
   {
     'folke/snacks.nvim',
     priority = 1000,
     lazy = false,
+    ---@module 'snacks'
     ---@type snacks.Config
     opts = {
       -- your configuration comes here
@@ -1171,6 +1246,7 @@ require('lazy').setup({
       dashboard = { enabled = true },
       dim = { enabled = true },
       explorer = { enabled = true },
+      image = { enabled = true },
       indent = { enabled = true },
       input = { enabled = true },
       lazygit = { enabled = true },
@@ -1180,6 +1256,31 @@ require('lazy').setup({
       scope = { enabled = true },
       zen = { enabled = true },
     },
+  },
+  -- Git merge
+  {
+    'akinsho/git-conflict.nvim',
+    version = '*',
+    config = true,
+    init = function()
+      require('git-conflict').setup {
+        default_commands = true,
+        default_mappings = false,
+        disable_diagnostics = false,
+        list_opener = 'copen',
+        highlights = {
+          incoming = 'DiffAdd',
+          current = 'DiffText',
+        },
+        debug = false,
+        vim.keymap.set('n', '<leader>co', '<Plug>(git-conflict-ours)'),
+        vim.keymap.set('n', '<leader>ct', '<Plug>(git-conflict-theirs)'),
+        vim.keymap.set('n', '<leader>cb', '<Plug>(git-conflict-both)'),
+        vim.keymap.set('n', '<leader>c0', '<Plug>(git-conflict-none)'),
+        vim.keymap.set('n', '<leader>[x', '<Plug>(git-conflict-prev-conflict)'),
+        vim.keymap.set('n', '<leader>]x', '<Plug>(git-conflict-next-conflict)'),
+      }
+    end,
   },
   -- Restore sessions
   {
