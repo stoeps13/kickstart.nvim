@@ -583,7 +583,7 @@ require('lazy').setup({
             if vim.fn.has 'nvim-0.11' == 1 then
               return client:supports_method(method, bufnr)
             else
-              return client.supports_method(method, { bufnr = bufnr })
+              return client.supports_method(client, method, bufnr)
             end
           end
 
@@ -727,6 +727,7 @@ require('lazy').setup({
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
+        automatic_enable = true,
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
@@ -823,13 +824,11 @@ require('lazy').setup({
         config = function()
           local ls = require 'luasnip'
           require('luasnip.loaders.from_vscode').lazy_load()
-          require('luasnip.loaders.from_lua').lazy_load { paths = './lua/snippets' }
+          require('luasnip.loaders.from_lua').lazy_load { paths = { './lua/snippets' } }
           local s = ls.snippet
           local t = ls.text_node
           local i = ls.insert_node
           local f = ls.function_node
-          local extras = require 'luasnip.extras'
-          local rep = extras.rep
 
           local getPath = function()
             local current_file_path = vim.fn.expand '%:p'
@@ -839,33 +838,8 @@ require('lazy').setup({
             return parent_path
           end
 
-          local makePath = function()
-            local current_file_path = vim.fn.expand '%:p'
-
-            local current_working_directory = vim.fn.getcwd()
-
-            local relative_path = vim.fn.fnamemodify(current_file_path, ':p:h')
-            relative_path = vim.fn.substitute(relative_path, '^' .. vim.fn.escape(current_working_directory, '/\\') .. '/', '', '')
-
-            return relative_path
-          end
           local date = function()
             return { os.date '%Y-%m-%d' }
-          end
-          local addDirect = function()
-            local current_file_path = vim.fn.expand '%:p'
-
-            local base_path_prefix = '/Users/<SET YOUR BASE PATH!!!>'
-
-            if vim.fn.stridx(current_file_path, base_path_prefix) == 0 then
-              local relative_path_without_base = vim.fn.substitute(current_file_path, '^' .. base_path_prefix, '', '')
-
-              local directory_only = vim.fn.fnamemodify(relative_path_without_base, ':h')
-
-              return '/' .. directory_only
-            end
-
-            return 'ERROR'
           end
 
           vim.keymap.set({ 'i', 's' }, '<C-k>', function()
@@ -1558,8 +1532,7 @@ require('lazy').setup({
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, {
-  ui = {},
-  --[[
+  -- ui = {},
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
@@ -1579,7 +1552,6 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
-  --]]
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
