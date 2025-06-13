@@ -27,6 +27,9 @@ return {
           text = { 'vale' },
           sh = { 'shellcheck' },
           vimwiki = { 'vale' },
+          python = { 'ruff' },
+          yaml = { 'yamllint' },
+          ansible = { 'ansible-lint' },
           --typst = { 'tinymist' },
         }
       --
