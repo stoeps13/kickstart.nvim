@@ -220,7 +220,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.hl.on_yank()
   end,
 })
-
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -1195,7 +1194,7 @@ require('lazy').setup({
       'michal-h21/vim-zettel',
       'michal-h21/vimwiki-sync',
       'majutsushi/tagbar',
-      'tools-life/taskwiki',
+      --'tools-life/taskwiki',
       'junegunn/fzf',
       'junegunn/fzf.vim',
     },
@@ -1266,8 +1265,7 @@ require('lazy').setup({
           ['```sql'] = { parser = 'sql' },
         },
       }
-      vim.g.nv_search_paths =
-        { '/var/home/stoeps/vimwiki/2025', '/var/home/stoeps/vimwiki/hcl-cases', '/var/home/stoeps/vimwiki/pentest', '/var/home/stoeps/vimwiki/archive' }
+      vim.g.nv_search_paths = { '~/vimwiki/2025', '~/vimwiki/hcl-cases', '~/vimwiki/pentest', '~/vimwiki/archive' }
       vim.g.zettel_format = '%y%m%d-%file_no'
       -- vim.g.zettel_default_mappings = 0
       vim.g.zettel_options = {
@@ -1280,23 +1278,45 @@ require('lazy').setup({
       vim.g.taskwiki_disable_concealcursor = true
       vim.conceallevel = 0
       vim.opt.conceallevel = 0
-      vim.cmd [[
-      autocmd BufNewFile ~/vimwiki/2025/diary/*.md
-      \ call append(0,[
-      \ "# " . split(expand('%:r'),'/')[-1], "",
-      \ "## Meetings", "",
-      \ "## Logbook",  "",
-      \ "## Tasks", "",
-      \ "### Urgent tasks | +OVERDUE or +urgent or scheduled:today | +urgent", "",
-      \ "### Tasks completed today | status:completed end:" . split(expand('%:r'), '/')[-1], ""])
-    ]]
-      vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]] })
-      vim.keymap.set('n', '<CR>', ':VimwikiFollowLink<CR>', {})
+      -- Add autocmd to create diary pages with different content than the template
+      local _vimwiki = vim.api.nvim_create_augroup('_vimwiki', { clear = true })
+      vim.api.nvim_create_autocmd({ 'BufNewFile' }, {
+        pattern = { '*/vimwiki/2025/diary/*.md' },
+        callback = function()
+          local filename = vim.fn.expand '%:r'
+          local path_parts = vim.fn.split(filename, '/')
+          local title = path_parts[#path_parts] -- get the last element
+          local lines = {
+            '# ' .. title,
+            '',
+            '## Meetings',
+            '',
+            '## Logbook',
+            '',
+          }
+          vim.api.nvim_buf_set_lines(0, 0, 0, false, lines)
+        end,
+        group = _vimwiki,
+      })
+      vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]], group = _vimwiki })
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'vimwiki',
+        callback = function()
+          vim.api.nvim_set_keymap('n', '<CR>', ':VimwikiFollowLink<CR>', {})
+        end,
+        group = _vimwiki,
+      })
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>sa',
         ':r! sn_case_with_comments.py -n %:t:r -a<CR>',
         { desc = 'Get all comments for this case', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>se',
+        ':r! sn_case_with_comments.py -n %:t:r -f ',
+        { desc = 'Get comments from date for this case', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
         'n',
