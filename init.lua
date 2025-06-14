@@ -299,7 +299,11 @@ require('lazy').setup({
   --
   -- Then, because we use the `opts` key (recommended), the configuration runs
   -- after the plugin has been loaded as `require(MODULE).setup(opts)`.
-
+  {
+    'chentoast/marks.nvim',
+    event = 'VeryLazy',
+    opts = {},
+  },
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
@@ -1222,6 +1226,7 @@ require('lazy').setup({
       indent = { enabled = true },
       input = { enabled = true },
       lazygit = { enabled = true },
+      marks = { enabled = true },
       picker = { enabled = true },
       notifier = { enabled = true },
       quickfile = { enabled = true },
