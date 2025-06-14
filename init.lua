@@ -249,7 +249,7 @@ rtp:prepend(lazypath)
 
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  'NMAC417/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -299,7 +299,11 @@ require('lazy').setup({
   --
   -- Then, because we use the `opts` key (recommended), the configuration runs
   -- after the plugin has been loaded as `require(MODULE).setup(opts)`.
-
+  {
+    'chentoast/marks.nvim',
+    event = 'VeryLazy',
+    opts = {},
+  },
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
@@ -718,9 +722,109 @@ require('lazy').setup({
                 callSnippet = 'Replace',
               },
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
+              diagnostics = { disable = { 'missing-fields' } },
             },
           },
+        },
+        ltex = {
+          cmd = { 'ltex-ls-plus' },
+          filetypes = {
+            'asciidoc',
+            'gitcommit',
+            'latex',
+            'mail',
+            'markdown',
+            'pandoc',
+            'rst',
+            'text',
+            'typst',
+            'vimwiki',
+          },
+          get_language_id = function(_, filetype)
+            local language_id_mapping = {
+              adoc = 'asciidoc',
+              bib = 'bibtex',
+              pandoc = 'markdown',
+              plaintex = 'tex',
+              rnoweb = 'rsweave',
+              rst = 'restructuredtext',
+              tex = 'latex',
+              text = 'plaintext',
+              md = 'markdown',
+            }
+            return language_id_mapping[filetype] or filetype
+          end,
+          single_file_support = true,
+          settings = {
+            ltex = {
+              language = 'en-US',
+              checkFrequency = 'save',
+              sentenceCacheSize = 2000,
+              additionalRules = {
+                enablePickyRules = true,
+                motherTongue = 'de_DE',
+              },
+              enabledRules = {
+                en = { 'EN_CONSISTENT_APOS' },
+              },
+              disabledRules = {
+                en = { 'WHITESPACE_RULE', 'DASH_RULE', 'TWO_HYPHENS', 'CHANGE', 'ISSUE', 'CHECK', 'ACTUALLY', 'CONSISTENT' },
+              },
+              dictionary = {
+                de = {
+                  'CryptPad',
+                  'Chouhartem',
+                  -- field names
+                  'authors',
+                  'categories',
+                  'created',
+                  'updated',
+                  'title',
+                  'meta',
+                  'CryptPad',
+                  'Stoettner',
+                  'OpenSearch',
+                  'Vegard',
+                },
+                en = {
+                  'CryptPad',
+                  'Stoettner',
+                  'OpenSearch',
+                  'Vegard',
+                },
+              },
+            },
+          },
+        },
+        -- Python
+        pyright = {
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                useLibraryCodeForTypes = true,
+                diagnosticMode = 'workspace',
+              },
+            },
+          },
+        },
+        -- YAML
+        yamlls = {
+          settings = {
+            yaml = {
+              schemas = {
+                ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
+                ['https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook'] = '/*playbook*.yml',
+                ['https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks'] = '/tasks/**/*.yml',
+              },
+            },
+          },
+        },
+        -- Ansible
+        ansiblels = {},
+        -- HTML
+        html = {
+          filetypes = { 'html', 'templ' },
         },
         tinymist = {},
         prettier = {},
@@ -743,6 +847,10 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'ltex-ls-plus', -- Language tool server for text checking
+        'ruff', -- Python linting and formatting
+        'ansible-lint', -- Ansible linting
+        'yamllint', -- YAML linting
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -796,7 +904,10 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        python = { 'black' },
+        python = { 'ruff', 'black' },
+        yaml = { 'prettier' },
+        html = { 'prettier' },
+        json = { 'prettier' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -846,24 +957,9 @@ require('lazy').setup({
         config = function()
           local ls = require 'luasnip'
           require('luasnip.loaders.from_vscode').lazy_load()
-          require('luasnip.loaders.from_lua').lazy_load { paths = { './lua/snippets' } }
-          local s = ls.snippet
-          local t = ls.text_node
-          local i = ls.insert_node
-          local f = ls.function_node
+          require('luasnip.loaders.from_lua').lazy_load { paths = { vim.fn.stdpath 'config' .. '/lua/snippets' } }
 
-          local getPath = function()
-            local current_file_path = vim.fn.expand '%:p'
-
-            local parent_path = vim.fn.fnamemodify(current_file_path, ':h:h')
-
-            return parent_path
-          end
-
-          local date = function()
-            return { os.date '%Y-%m-%d' }
-          end
-
+          -- Snippet navigation keymaps
           vim.keymap.set({ 'i', 's' }, '<C-k>', function()
             if ls.expand_or_jumpable() then
               ls.expand_or_jump()
@@ -875,100 +971,6 @@ require('lazy').setup({
               ls.jump(-1)
             end
           end, { silent = true })
-
-          ls.add_snippets('vimwiki', {
-            s('meta', {
-              t { '---', 'title: ' },
-              i(1, 'note_title'),
-              t { '', 'author: ' },
-              i(2, 'author'),
-              t { '', 'date: ' },
-              f(date, {}),
-              t { '', 'categories: [' },
-              i(3, ''),
-              t { ']', 'lastmod: ' },
-              f(date, {}),
-              t { '', 'tags: [' },
-              i(4),
-              t { ']', 'comments: true', '---', '' },
-              i(0),
-            }),
-
-            s('home', {
-              t '[[/index|Home]]',
-            }),
-
-            s('to_back)', {
-              t '[[',
-              t '//',
-              f(getPath),
-              t '/',
-              i(1, 'back directory'),
-              t '|Back]]',
-            }),
-
-            s('h1', {
-              t '# ',
-              i(1, 'Name header'),
-            }),
-
-            s('h2', {
-              t '## ',
-              i(1, 'Name header'),
-            }),
-            s('h3', {
-              t '### ',
-              i(1, 'Name header'),
-            }),
-            s('h4', {
-              t '#### ',
-              i(1, 'Name header'),
-            }),
-
-            s('link', {
-              t '[',
-              i(1, 'Linktitle'),
-              t '](',
-              i(2, 'Location'),
-              t ')',
-            }),
-
-            s('todo_incomp', {
-              t '- [ ] ',
-              i(1, 'reminder'),
-            }),
-
-            s('todo_done', {
-              t '- [X] ',
-              i(1, 'reminder'),
-            }),
-
-            s('todo_notyet', {
-              t '- [.] ',
-              i(1, 'reminder'),
-            }),
-
-            s('comingsoon', {
-              t { '[[/index|Home]]', '', '' },
-              t 'Coming Soon...',
-            }),
-
-            s('InterlocUpdate', {
-              t { '## ' },
-              f(date, {}),
-              t { ' Interloc Call', '* ' },
-              i(1, 'updates'),
-            }),
-            s('todo_open', {
-              t '## Open tasks | status:pending -VISIBLE',
-            }),
-          })
-          local keymap = vim.api.nvim_set_keymap
-          local opts = { noremap = true, silent = true }
-          keymap('i', '<c-j>', "<cmd>lua require'luasnip'.jump(1)<CR>", opts)
-          keymap('s', '<c-j>', "<cmd>lua require'luasnip'.jump(1)<CR>", opts)
-          keymap('i', '<c-k>', "<cmd>lua require'luasnip'.jump(-1)<CR>", opts)
-          keymap('s', '<c-k>', "<cmd>lua require'luasnip'.jump(-1)<CR>", opts)
         end,
 
         opts = {},
@@ -1246,6 +1248,7 @@ require('lazy').setup({
       indent = { enabled = true },
       input = { enabled = true },
       lazygit = { enabled = true },
+      marks = { enabled = true },
       picker = { enabled = true },
       notifier = { enabled = true },
       quickfile = { enabled = true },
@@ -1505,6 +1508,14 @@ require('lazy').setup({
         asciidoc = {
           dir_path = 'images', ---@type string | fun(): string
           template = 'image::$FILE_NAME[width=80%, alt="$FILE_NAME"]', ---@type string | fun(context: table): string
+        },
+        typst = {
+          template = [[
+#figure(
+  image("$FILE_PATH", width: 80%),
+  caption: [$CURSOR],
+) <fig-$LABEL>
+    ]], ---@type string | fun(context: table): string
         },
       },
       -- or leave it empty to use the default settings

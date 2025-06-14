@@ -5,3 +5,9 @@ nvim
 
 spell/
 lazy-lock.json
+
+# Claude Code documentation
+CLAUDE.md
+
+# Claude Code session files
+.claude/
