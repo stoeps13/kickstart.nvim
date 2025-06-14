@@ -249,7 +249,7 @@ rtp:prepend(lazypath)
 
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  'NMAC417/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -700,7 +700,7 @@ require('lazy').setup({
                 callSnippet = 'Replace',
               },
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
+              diagnostics = { disable = { 'missing-fields' } },
             },
           },
         },
@@ -791,9 +791,9 @@ require('lazy').setup({
           settings = {
             yaml = {
               schemas = {
-                ["https://json.schemastore.org/github-workflow.json"] = "/.github/workflows/*",
-                ["https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook"] = "/*playbook*.yml",
-                ["https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks"] = "/tasks/**/*.yml",
+                ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
+                ['https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook'] = '/*playbook*.yml',
+                ['https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks'] = '/tasks/**/*.yml',
               },
             },
           },
@@ -1486,6 +1486,14 @@ require('lazy').setup({
         asciidoc = {
           dir_path = 'images', ---@type string | fun(): string
           template = 'image::$FILE_NAME[width=80%, alt="$FILE_NAME"]', ---@type string | fun(context: table): string
+        },
+        typst = {
+          template = [[
+#figure(
+  image("$FILE_PATH", width: 80%),
+  caption: [$CURSOR],
+) <fig-$LABEL>
+    ]], ---@type string | fun(context: table): string
         },
       },
       -- or leave it empty to use the default settings
