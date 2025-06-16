@@ -104,3 +104,4 @@ return {
     t '## Open tasks | status:pending -VISIBLE',
   }),
 }
+

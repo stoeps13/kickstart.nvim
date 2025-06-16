@@ -727,6 +727,7 @@ require('lazy').setup({
           },
         },
         ltex = {
+          enabled = false,
           cmd = { 'ltex-ls-plus' },
           filetypes = {
             'asciidoc',
