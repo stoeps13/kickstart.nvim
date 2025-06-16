@@ -1045,8 +1045,10 @@ require('lazy').setup({
   },
   {
     'abhinandh-s/typst-snippets',
+    ft = 'typst',
     config = function()
-      require('snippets').setup()
+      -- Load the plugin's snippets into LuaSnip
+      require('luasnip.loaders.from_lua').lazy_load { paths = { vim.fn.stdpath 'data' .. '/lazy/typst-snippets/lua/snippets' } }
     end,
   },
   { -- You can easily change to a different colorscheme.
