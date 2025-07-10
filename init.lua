@@ -220,6 +220,24 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.hl.on_yank()
   end,
 })
+-- Typst folding function
+-- function _G.typst_fold_expr(lnum)
+--   local line = vim.fn.getline(lnum)
+--   if line:match '^= ' then
+--     return '>1'
+--   elseif line:match '^== ' then
+--     return '>2'
+--   elseif lnum > 1 then
+--     local prev_line = vim.fn.getline(lnum - 1)
+--     if prev_line:match '^= ' then
+--       return '1'
+--     elseif prev_line:match '^== ' then
+--       return '2'
+--     end
+--   end
+--   return '='
+-- end
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -1156,6 +1174,16 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', function()
         vim.cmd('silent !zathura --fork ' .. vim.fn.expand '%:p:r' .. '.pdf &')
       end, { silent = true, desc = 'Open PDF in Zathura' })
+
+      -- Set up folding for Typst files
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'typst',
+        callback = function()
+          vim.o.foldmethod = 'expr'
+          vim.o.foldexpr = 'v:lua.typst_fold_expr(v:lnum)'
+          vim.o.foldlevel = 1
+        end,
+      })
     end,
   },
   -- todo.txt
@@ -1246,7 +1274,7 @@ require('lazy').setup({
       dashboard = { enabled = true },
       dim = { enabled = true },
       explorer = { enabled = true },
-      image = { enabled = true },
+      image = { enabled = false },
       indent = { enabled = true },
       input = { enabled = true },
       lazygit = { enabled = true },
@@ -1512,11 +1540,12 @@ require('lazy').setup({
           template = 'image::$FILE_NAME[width=80%, alt="$FILE_NAME"]', ---@type string | fun(context: table): string
         },
         typst = {
+          dir_path = 'images', ---@type string | fun(): string
           template = [[
 #figure(
-  image("$FILE_PATH", width: 80%),
+  image("$FILE_PATH", width: 100%),
   caption: [$CURSOR],
-) <fig-$LABEL>
+) 
     ]], ---@type string | fun(context: table): string
         },
       },
