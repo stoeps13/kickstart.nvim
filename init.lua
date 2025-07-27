@@ -1042,14 +1042,14 @@ require('lazy').setup({
       signature = { enabled = true },
     },
   },
-  {
-    'abhinandh-s/typst-snippets',
-    ft = 'typst',
-    config = function()
-      -- Load the plugin's snippets into LuaSnip
-      require('luasnip.loaders.from_lua').lazy_load { paths = { vim.fn.stdpath 'data' .. '/lazy/typst-snippets/lua/snippets' } }
-    end,
-  },
+  -- {
+  --   'abhinandh-s/typst-snippets',
+  --   ft = 'typst',
+  --   config = function()
+  --     -- Load the plugin's snippets into LuaSnip
+  --     require('luasnip.loaders.from_lua').lazy_load { paths = { vim.fn.stdpath 'data' .. '/lazy/typst-snippets/lua/snippets' } }
+  --   end,
+  -- },
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
     -- change the command in the config to whatever the name of that colorscheme is.
@@ -1138,26 +1138,26 @@ require('lazy').setup({
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
   -- Typst
-  {
-    'kaarmu/typst.vim',
-    ft = 'typst',
-    lazy = false,
-    init = function()
-      -- Function to open a terminal with typst watch command
-      local function typst_watch()
-        vim.cmd 'vsp'
-        vim.cmd 'vertical resize 20'
-        vim.cmd('terminal typst watch ' .. vim.fn.expand '%:')
-        vim.cmd 'norm! <C-w>h'
-      end
+  -- {
+  --   'kaarmu/typst.vim',
+  --   ft = 'typst',
+  --   lazy = false,
+  --   init = function()
+  --     -- Function to open a terminal with typst watch command
+  --     local function typst_watch()
+  --       vim.cmd 'vsp'
+  --       vim.cmd 'vertical resize 20'
+  --       vim.cmd('terminal typst watch ' .. vim.fn.expand '%:')
+  --       vim.cmd 'norm! <C-w>h'
+  --     end
 
-      -- Set keymappings for Typst-related functions
-      vim.keymap.set('n', '<leader>sc', typst_watch, { silent = true, desc = 'Watch Typst file' })
-      vim.keymap.set('n', '<leader>sr', function()
-        vim.cmd('silent !zathura --fork ' .. vim.fn.expand '%:p:r' .. '.pdf &')
-      end, { silent = true, desc = 'Open PDF in Zathura' })
-    end,
-  },
+  --     -- Set keymappings for Typst-related functions
+  --     vim.keymap.set('n', '<leader>sc', typst_watch, { silent = true, desc = 'Watch Typst file' })
+  --     vim.keymap.set('n', '<leader>sr', function()
+  --       vim.cmd('silent !zathura --fork ' .. vim.fn.expand '%:p:r' .. '.pdf &')
+  --     end, { silent = true, desc = 'Open PDF in Zathura' })
+  --   end,
+  -- },
   -- precognition
   {
     'tris203/precognition.nvim',

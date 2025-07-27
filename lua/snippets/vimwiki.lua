@@ -96,7 +96,7 @@ return {
   s('InterlocUpdate', {
     t { '## ' },
     f(date, {}),
-    t { ' Interloc Call', '* ' },
+    t { ' Interloc Call', '', '* ' },
     i(1, 'updates'),
   }),
 
@@ -104,4 +104,3 @@ return {
     t '## Open tasks | status:pending -VISIBLE',
   }),
 }
-
