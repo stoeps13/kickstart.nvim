@@ -755,7 +755,6 @@ require('lazy').setup({
             'pandoc',
             'rst',
             'text',
-            'typst',
             'vimwiki',
           },
           get_language_id = function(_, filetype)
@@ -846,7 +845,7 @@ require('lazy').setup({
         },
         tinymist = {},
         prettier = {},
-        vale = {},
+        -- vale = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -1206,6 +1205,10 @@ require('lazy').setup({
         'startify',
       },
     },
+  },
+  -- diff view
+  {
+    'sindrets/diffview.nvim'
   },
   -- todo.txt
   {
