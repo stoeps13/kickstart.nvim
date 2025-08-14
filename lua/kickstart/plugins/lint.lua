@@ -20,6 +20,7 @@ return {
           janet = { 'janet' },
           json = { 'jsonlint' },
           html = { 'htmlhint' },
+          golang = { 'gopls' },
           -- markdown = { 'vale' },
           -- rst = { 'vale' },
           ruby = { 'ruby' },
