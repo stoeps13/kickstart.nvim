@@ -1181,76 +1181,15 @@ require('lazy').setup({
   },
   -- todo.txt
   {
-    'arnarg/todotxt.nvim',
-    requires = { 'MunifTanjim/nui.nvim' },
-    init = function()
-      require('todotxt-nvim').setup {
-        todo_file = '~/vimwiki/2025/diary/todo.txt',
-        keymap = {
-          quit = 'q',
-          toggle_metadata = 'm',
-          delete_task = 'dd',
-          complete_task = 'cc',
-          edit_task = 'ee',
-        },
-        alternative_priority = {
-          A = 'now',
-          B = 'next',
-          C = 'today',
-          D = 'this week',
-          E = 'next week',
-        },
-        sidebar = {
-          width = 80,
-          position = 'right', -- default: "right"
-        },
-        highlights = {
-          project = {
-            fg = 'magenta',
-            bg = 'NONE',
-            style = 'NONE',
-          },
-          context = {
-            fg = 'cyan',
-            bg = 'NONE',
-            style = 'NONE',
-          },
-          date = {
-            fg = 'NONE',
-            bg = 'NONE',
-            style = 'underline',
-          },
-          done_task = {
-            fg = 'gray',
-            bg = 'NONE',
-            style = 'NONE',
-          },
-          priorities = {
-            A = {
-              fg = 'red',
-              bg = 'NONE',
-              style = 'bold',
-            },
-            B = {
-              fg = 'magenta',
-              bg = 'NONE',
-              style = 'bold',
-            },
-            C = {
-              fg = 'yellow',
-              bg = 'NONE',
-              style = 'bold',
-            },
-            D = {
-              fg = 'cyan',
-              bg = 'NONE',
-              style = 'bold',
-            },
-          },
-        },
+    'cche/todo-txt.nvim',
+    dependencies = {
+      'hrsh7th/nvim-cmp',
+    },
+    config = function()
+      require('todo-txt').setup {
+        todo_file = vim.fn.expand '~/vimwiki/2025/diary/todo.txt',
+        done_file = vim.fn.expand '~/vimwiki/2025/diary/done.txt',
       }
-      vim.api.nvim_set_keymap('n', '<localleader>ta', ':ToDoTxtCapture<CR>', { desc = 'Add task to todo.txt', noremap = true, silent = false })
-      vim.api.nvim_set_keymap('n', '<localleader>ts', ':ToDoTxtTasksToggle<CR>', { desc = 'Toggle task sidebar', noremap = true, silent = false })
     end,
   },
   -- Snacks
