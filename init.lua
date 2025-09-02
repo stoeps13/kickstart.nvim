@@ -1187,8 +1187,8 @@ require('lazy').setup({
     },
     config = function()
       require('todo-txt').setup {
-        todo_file = vim.fn.expand '~/vimwiki/2025/diary/todo.txt',
-        done_file = vim.fn.expand '~/vimwiki/2025/diary/done.txt',
+        todo_file = vim.fn.expand '~/vimwiki/latest/diary/todo.txt',
+        done_file = vim.fn.expand '~/vimwiki/latest/diary/done.txt',
       }
     end,
   },
@@ -1265,11 +1265,11 @@ require('lazy').setup({
       -- symbols for spaces, auto re-index tags db
       vim.g.vimwiki_list = {
         {
-          path = '~/vimwiki/2025',
+          path = '~/vimwiki/latest',
           syntax = 'markdown',
           ext = '.md',
           links_space_char = '_',
-          path_html = '~/vimwiki/2025/site_html/',
+          path_html = '~/vimwiki/latest/site_html/',
           custom_wiki2html = 'vimwiki_markdown',
           auto_tags = 1,
           auto_diary_index = 1,
@@ -1327,7 +1327,7 @@ require('lazy').setup({
           ['```sql'] = { parser = 'sql' },
         },
       }
-      vim.g.nv_search_paths = { '~/vimwiki/2025', '~/vimwiki/hcl-cases', '~/vimwiki/pentest', '~/vimwiki/archive' }
+      vim.g.nv_search_paths = { '~/vimwiki/latest', '~/vimwiki/hcl-cases', '~/vimwiki/pentest', '~/vimwiki/archive' }
       vim.g.zettel_format = '%y%m%d-%file_no'
       -- vim.g.zettel_default_mappings = 0
       vim.g.zettel_options = {
@@ -1343,7 +1343,7 @@ require('lazy').setup({
       -- Add autocmd to create diary pages with different content than the template
       local _vimwiki = vim.api.nvim_create_augroup('_vimwiki', { clear = true })
       vim.api.nvim_create_autocmd({ 'BufNewFile' }, {
-        pattern = { '*/vimwiki/2025/diary/*.md' },
+        pattern = { '*/vimwiki/2025/diary/*.md', '*/vimwiki/2026/diary/*.md' },
         callback = function()
           local filename = vim.fn.expand '%:r'
           local path_parts = vim.fn.split(filename, '/')
