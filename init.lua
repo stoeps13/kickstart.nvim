@@ -1425,6 +1425,12 @@ require('lazy').setup({
         '<cmd>let @+ = expand("%")<CR>',
         { desc = '[C]opy filename with [r]elative path', noremap = true, silent = false }
       )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>cc',
+        '<cmd>let @+ = expand("%:t:r")<CR>',
+        { desc = '[C]opy filename without extension', noremap = true, silent = false }
+      )
       vim.api.nvim_set_keymap('n', '<localleader>b', '<cmd>bd<CR>', { desc = 'Close Buffer', noremap = true, silent = false })
     end,
   },
