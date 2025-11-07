@@ -8,6 +8,10 @@ local date = function()
   return { os.date '%Y-%m-%d' }
 end
 
+local hdate = function()
+  return { os.date '%Y-%m-%dT%H:00:00+02:00' }
+end
+
 return {
   -- YAML frontmatter
   s('front', {
@@ -104,4 +108,9 @@ return {
     t { '', '', '</details>' },
     i(0),
   }),
+
+  s('hdate', {
+    f(hdate, {}),
+  }),
 }
+

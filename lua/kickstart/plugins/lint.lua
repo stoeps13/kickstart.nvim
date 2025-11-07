@@ -5,6 +5,17 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
       local lint = require 'lint'
+      lint.linters.ansiblelint = {
+        cmd = vim.env.HOME .. '/.local/bin/ansible-lint',
+        stdin = false,
+        args = { '-f', 'codeclimate' },
+        stream = 'stdout',
+        ignore_exitcode = true,
+        parser = require('lint.parser').from_errorformat('%f:%l:%c: %m', {
+          source = 'ansible-lint',
+        }),
+      }
+
       lint.linters_by_ft =
         -- To allow other plugins to add linters to require('lint').linters_by_ft,
         -- instead set linters_by_ft like this:
@@ -30,7 +41,7 @@ return {
           -- vimwiki = { 'vale' },
           python = { 'ruff' },
           yaml = { 'yamllint' },
-          ansible = { 'ansible-lint' },
+          ansible = { 'ansiblelint' },
           --typst = { 'tinymist' },
         }
       --

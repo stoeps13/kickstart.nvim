@@ -14,6 +14,10 @@ local date = function()
   return { os.date '%Y-%m-%d' }
 end
 
+local hdate = function()
+  return { os.date '%Y-%m-%dT%H:00:00+02:00' }
+end
+
 return {
   s('meta', {
     t { '---', 'title: ' },
@@ -100,7 +104,11 @@ return {
     i(1, 'updates'),
   }),
 
-  s('todo_open', {
-    t '## Open tasks | status:pending -VISIBLE',
+  s('comments', {
+    t '[Jump to comments](#Comments)',
+  }),
+
+  s('hdate', {
+    f(hdate, {}),
   }),
 }

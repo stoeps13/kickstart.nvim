@@ -168,6 +168,14 @@ vim.o.scrolloff = 10
 vim.o.confirm = true
 vim.o.expandtab = true
 
+vim.filetype.add {
+  pattern = {
+    ['.*playbook.*%.ya?ml'] = 'yaml.ansible',
+    ['.*tasks/.*%.ya?ml'] = 'yaml.ansible',
+    ['.*handlers/.*%.ya?ml'] = 'yaml.ansible',
+  },
+}
+vim.env.PATH = vim.env.HOME .. '/.local/bin:' .. vim.env.PATH
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -302,6 +310,49 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
     },
+  },
+  {
+    'mikavilpas/yazi.nvim',
+    version = '*', -- use the latest stable version
+    event = 'VeryLazy',
+    dependencies = {
+      { 'nvim-lua/plenary.nvim', lazy = true },
+    },
+    keys = {
+      -- 👇 in this section, choose your own keymappings!
+      {
+        '<leader>-',
+        mode = { 'n', 'v' },
+        '<cmd>Yazi<cr>',
+        desc = 'Open yazi at the current file',
+      },
+      {
+        -- Open in the current working directory
+        '<leader>cw',
+        '<cmd>Yazi cwd<cr>',
+        desc = "Open the file manager in nvim's working directory",
+      },
+      {
+        '<c-up>',
+        '<cmd>Yazi toggle<cr>',
+        desc = 'Resume the last yazi session',
+      },
+    },
+    ---@type YaziConfig | {}
+    opts = {
+      -- if you want to open yazi instead of netrw, see below for more info
+      open_for_directories = false,
+      keymaps = {
+        show_help = '<f1>',
+      },
+    },
+    -- 👇 if you use `open_for_directories=true`, this is recommended
+    init = function()
+      -- mark netrw as loaded so it's not loaded at all.
+      --
+      -- More details: https://github.com/mikavilpas/yazi.nvim/issues/802
+      vim.g.loaded_netrwPlugin = 1
+    end,
   },
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
@@ -867,6 +918,7 @@ require('lazy').setup({
         'ltex-ls-plus', -- Language tool server for text checking
         'ruff', -- Python linting and formatting
         'ansible-lint', -- Ansible linting
+        'ansiblels',
         'yamllint', -- YAML linting
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -1038,7 +1090,7 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
         },
@@ -1108,7 +1160,7 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      -- require('mini.surround').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -1154,27 +1206,6 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
-  -- Typst
-  -- {
-  --   'kaarmu/typst.vim',
-  --   ft = 'typst',
-  --   lazy = false,
-  --   init = function()
-  --     -- Function to open a terminal with typst watch command
-  --     local function typst_watch()
-  --       vim.cmd 'vsp'
-  --       vim.cmd 'vertical resize 20'
-  --       vim.cmd('terminal typst watch ' .. vim.fn.expand '%:')
-  --       vim.cmd 'norm! <C-w>h'
-  --     end
-
-  --     -- Set keymappings for Typst-related functions
-  --     vim.keymap.set('n', '<leader>sc', typst_watch, { silent = true, desc = 'Watch Typst file' })
-  --     vim.keymap.set('n', '<leader>sr', function()
-  --       vim.cmd('silent !zathura --fork ' .. vim.fn.expand '%:p:r' .. '.pdf &')
-  --     end, { silent = true, desc = 'Open PDF in Zathura' })
-  --   end,
-  -- },
   -- diff view
   {
     'sindrets/diffview.nvim',
@@ -1182,9 +1213,6 @@ require('lazy').setup({
   -- todo.txt
   {
     'cche/todo-txt.nvim',
-    dependencies = {
-      'hrsh7th/nvim-cmp',
-    },
     config = function()
       require('todo-txt').setup {
         todo_file = vim.fn.expand '~/vimwiki/latest/diary/todo.txt',
@@ -1353,7 +1381,7 @@ require('lazy').setup({
             '',
             '## Meetings',
             '',
-            '## Logbook',
+            '## Logbook / Tada List',
             '',
           }
           vim.api.nvim_buf_set_lines(0, 0, 0, false, lines)
@@ -1376,27 +1404,27 @@ require('lazy').setup({
       )
       vim.api.nvim_set_keymap(
         'n',
-        '<localleader>se',
-        ':r! sn_case_with_comments.py -n %:t:r -f ',
+        '<localleader>sc',
+        ":r! sn_case_with_comments.py -n %:t:r -f <C-r>=strftime('%Y-')<CR>",
         { desc = 'Get comments from date for this case', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>sb',
-        ':r ! vimwiki-cal.sh -n 7 -d 2025-',
+        ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-')<CR>",
         { desc = 'Add appointments for calendar week', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>sc',
-        ':r! sn_case_with_comments.py -n %:t:r -f ',
-        { desc = 'Get new comments', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>si',
         ":r! sn_interloc_overview.py<CR>:put ='Last updated: '.strftime('%Y-%m-%d %H:%M:%S')<CR>",
         { desc = 'Get open case list', noremap = true, silent = false }
+      )
+      vim.api.nvim_set_keymap(
+        'n',
+        '<localleader>sj',
+        ':r! get_interloc_updates.sh "<C-r>=strftime(\'%Y-%m-%d\')<CR>" ~/vimwiki/hcl-cases',
+        { desc = 'updates from Interloc call', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
         'n',
@@ -1431,6 +1459,7 @@ require('lazy').setup({
         '<cmd>let @+ = expand("%:t:r")<CR>',
         { desc = '[C]opy filename without extension', noremap = true, silent = false }
       )
+      vim.api.nvim_set_keymap('n', '<localleader>vt', ':VimwikiToggleListItem<CR>', { desc = '[T]oggle list item', noremap = true, silent = false })
       vim.api.nvim_set_keymap('n', '<localleader>b', '<cmd>bd<CR>', { desc = 'Close Buffer', noremap = true, silent = false })
     end,
   },
