@@ -1323,6 +1323,16 @@ require('lazy').setup({
           auto_diary_index = 1,
         },
         {
+          path = '~/vimwiki/hcl-kb',
+          syntax = 'markdown',
+          ext = '.md',
+          links_space_char = '_',
+          path_html = '~/vimwiki/hcl-kb/site_html/',
+          custom_wiki2html = 'vimwiki_markdown',
+          auto_tags = 1,
+          auto_diary_index = 1,
+        },
+        {
           path = '~/vimwiki/pentest',
           syntax = 'markdown',
           ext = '.md',
@@ -1355,7 +1365,7 @@ require('lazy').setup({
           ['```sql'] = { parser = 'sql' },
         },
       }
-      vim.g.nv_search_paths = { '~/vimwiki/latest', '~/vimwiki/hcl-cases', '~/vimwiki/pentest', '~/vimwiki/archive' }
+      vim.g.nv_search_paths = { '~/vimwiki/latest', '~/vimwiki/hcl-cases', '~/vimwiki/hcl-kb', '~/vimwiki/pentest', '~/vimwiki/archive' }
       vim.g.zettel_format = '%y%m%d-%file_no'
       -- vim.g.zettel_default_mappings = 0
       vim.g.zettel_options = {
@@ -1399,7 +1409,7 @@ require('lazy').setup({
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>sa',
-        ':r! sn_case_with_comments.py -n %:t:r -a<CR>',
+        ':r! sn_case_with_comments.py -n %:t:r -l 3 -a<CR>',
         { desc = 'Get all comments for this case', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
@@ -1529,7 +1539,7 @@ require('lazy').setup({
     cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
     build = 'cd app && yarn install',
     keys = {
-      { '<leader>v', '<cmd>MarkdownPreview<cr>', desc = 'Preview markdown' },
+      { '<leader>sv', '<cmd>MarkdownPreview<cr>', desc = 'Preview markdown' },
     },
     init = function()
       vim.g.mkdp_filetypes = { 'markdown' }
