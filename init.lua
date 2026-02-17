@@ -103,6 +103,8 @@ vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
 vim.o.relativenumber = true
+vim.o.linebreak = true
+-- vim.o.columns = 120
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = ''
@@ -312,49 +314,15 @@ require('lazy').setup({
     },
   },
   {
-    'mikavilpas/yazi.nvim',
-    version = '*', -- use the latest stable version
-    event = 'VeryLazy',
+    'code-biscuits/nvim-biscuits',
     dependencies = {
-      { 'nvim-lua/plenary.nvim', lazy = true },
+      'nvim-treesitter/nvim-treesitter',
     },
-    keys = {
-      -- 👇 in this section, choose your own keymappings!
-      {
-        '<leader>-',
-        mode = { 'n', 'v' },
-        '<cmd>Yazi<cr>',
-        desc = 'Open yazi at the current file',
-      },
-      {
-        -- Open in the current working directory
-        '<leader>cw',
-        '<cmd>Yazi cwd<cr>',
-        desc = "Open the file manager in nvim's working directory",
-      },
-      {
-        '<c-up>',
-        '<cmd>Yazi toggle<cr>',
-        desc = 'Resume the last yazi session',
-      },
-    },
-    ---@type YaziConfig | {}
     opts = {
-      -- if you want to open yazi instead of netrw, see below for more info
-      open_for_directories = false,
-      keymaps = {
-        show_help = '<f1>',
-      },
+      -- Config goes here
     },
-    -- 👇 if you use `open_for_directories=true`, this is recommended
-    init = function()
-      -- mark netrw as loaded so it's not loaded at all.
-      --
-      -- More details: https://github.com/mikavilpas/yazi.nvim/issues/802
-      vim.g.loaded_netrwPlugin = 1
-    end,
   },
-
+  --
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -1111,6 +1079,12 @@ require('lazy').setup({
       signature = { enabled = true },
     },
   },
+  {
+    'chomosuke/typst-preview.nvim',
+    lazy = false, -- or ft = 'typst'
+    version = '1.*',
+    opts = {}, -- lazy.nvim will implicitly calls `setup {}`
+  },
   -- {
   --   'abhinandh-s/typst-snippets',
   --   ft = 'typst',
@@ -1284,7 +1258,7 @@ require('lazy').setup({
       'michal-h21/vim-zettel',
       'michal-h21/vimwiki-sync',
       'majutsushi/tagbar',
-      --'tools-life/taskwiki',
+      'tbabej/taskwiki',
       'junegunn/fzf',
       'junegunn/fzf.vim',
     },
@@ -1376,24 +1350,51 @@ require('lazy').setup({
       }
       vim.g.zettel_date_format = '%Y-%m-%d'
       vim.g.taskwiki_disable_concealcursor = true
+      vim.g.taskwiki_taskrc_location = '~/.config/task/taskrc'
       vim.conceallevel = 0
       vim.opt.conceallevel = 0
       -- Add autocmd to create diary pages with different content than the template
       local _vimwiki = vim.api.nvim_create_augroup('_vimwiki', { clear = true })
+      -- Template for diary entries
+      -- adding appointments/meetings with script from khal
       vim.api.nvim_create_autocmd({ 'BufNewFile' }, {
         pattern = { '*/vimwiki/2025/diary/*.md', '*/vimwiki/2026/diary/*.md' },
         callback = function()
           local filename = vim.fn.expand '%:r'
           local path_parts = vim.fn.split(filename, '/')
           local title = path_parts[#path_parts] -- get the last element
+          local meetings_output = vim.fn.system('vimwiki-cal.sh -d ' .. title .. ' -n 1 | /usr/bin/grep -v "' .. title .. '"')
+          local meeting_lines = vim.fn.split(meetings_output, '\n')
+          meeting_lines = vim.tbl_filter(function(line)
+            return line ~= ''
+          end, meeting_lines)
+          local weather_output = vim.fn.system 'weather.sh Heppenheim'
+          local weather_lines = vim.fn.split(weather_output, '\n')
+          weather_lines = vim.tbl_filter(function(line)
+            return line ~= ''
+          end, weather_lines)
           local lines = {
             '# ' .. title,
             '',
+          }
+          vim.list_extend(lines, weather_lines)
+          vim.list_extend(lines, {
+            '',
             '## Meetings',
             '',
-            '## Logbook / Tada List',
+          })
+          vim.list_extend(lines, meeting_lines)
+          vim.list_extend(lines, {
             '',
-          }
+            '## Logbook | -COMPLETED +OVERDUE or -COMPLETED +urgent or -COMPLETED scheduled:'
+              .. title
+              .. ' or -COMPLETED due:'
+              .. title
+              .. ' or +ACTIVE | project:INBOX',
+            '',
+            '## Tada List | +COMPLETED end:' .. title,
+            '',
+          })
           vim.api.nvim_buf_set_lines(0, 0, 0, false, lines)
         end,
         group = _vimwiki,
@@ -1439,7 +1440,7 @@ require('lazy').setup({
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>st',
-        ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2025-" <CR>',
+        ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2026-" <CR>',
         { desc = 'Add today appointments', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
@@ -1448,6 +1449,7 @@ require('lazy').setup({
         ':r ! update_frontmatter.py %<CR>:e!<CR>',
         { desc = 'Update frontmatter', noremap = true, silent = false }
       )
+      vim.api.nvim_set_keymap('n', '<localleader>tu', '<cmd>TaskWikiBufferLoad<CR>', { desc = 'Update task list', noremap = true, silent = false })
       vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
       vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
       vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
@@ -1545,6 +1547,23 @@ require('lazy').setup({
       vim.g.mkdp_filetypes = { 'markdown' }
     end,
     ft = { 'markdown' },
+  },
+  {
+    'NeogitOrg/neogit',
+    lazy = true,
+    dependencies = {
+      'nvim-lua/plenary.nvim', -- required
+
+      -- Only one of these is needed.
+      'sindrets/diffview.nvim', -- optional
+
+      -- Only one of these is needed.
+      'ibhagwan/fzf-lua', -- optional
+    },
+    cmd = 'Neogit',
+    keys = {
+      { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Show Neogit UI' },
+    },
   },
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
