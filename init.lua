@@ -1236,12 +1236,12 @@ require('lazy').setup({
           current = 'DiffText',
         },
         debug = false,
-        vim.keymap.set('n', '<leader>co', '<Plug>(git-conflict-ours)'),
-        vim.keymap.set('n', '<leader>ct', '<Plug>(git-conflict-theirs)'),
-        vim.keymap.set('n', '<leader>cb', '<Plug>(git-conflict-both)'),
-        vim.keymap.set('n', '<leader>c0', '<Plug>(git-conflict-none)'),
-        vim.keymap.set('n', '<leader>[x', '<Plug>(git-conflict-prev-conflict)'),
-        vim.keymap.set('n', '<leader>]x', '<Plug>(git-conflict-next-conflict)'),
+        vim.keymap.set('n', '<leader>co', '<Plug>git-[c]onflict-[o]urs'),
+        vim.keymap.set('n', '<leader>ct', '<Plug>git-[c]onflict-[t]heirs'),
+        vim.keymap.set('n', '<leader>cb', '<Plug>git-[c]onflict-[b]oth'),
+        vim.keymap.set('n', '<leader>c0', '<Plug>git-conflict-none'),
+        vim.keymap.set('n', '<leader>cp', '<Plug>git-[c]onflict-[p]rev-conflict'),
+        vim.keymap.set('n', '<leader>cn', '<Plug>git-[c]onflict-[n]ext-conflict'),
       }
     end,
   },
@@ -1445,7 +1445,7 @@ require('lazy').setup({
       )
       vim.api.nvim_set_keymap(
         'n',
-        '<localleader>sv',
+        '<localleader>su',
         ':r ! update_frontmatter.py %<CR>:e!<CR>',
         { desc = 'Update frontmatter', noremap = true, silent = false }
       )
