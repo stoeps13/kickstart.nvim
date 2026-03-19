@@ -763,75 +763,6 @@ require('lazy').setup({
             },
           },
         },
-        ltex = {
-          cmd = { 'ltex-ls-plus' },
-          filetypes = {
-            'asciidoc',
-            'gitcommit',
-            'latex',
-            'mail',
-            'markdown',
-            'pandoc',
-            'rst',
-            'text',
-            'vimwiki',
-          },
-          get_language_id = function(_, filetype)
-            local language_id_mapping = {
-              adoc = 'asciidoc',
-              bib = 'bibtex',
-              pandoc = 'markdown',
-              plaintex = 'tex',
-              rnoweb = 'rsweave',
-              rst = 'restructuredtext',
-              tex = 'latex',
-              text = 'plaintext',
-              md = 'markdown',
-            }
-            return language_id_mapping[filetype] or filetype
-          end,
-          single_file_support = true,
-          settings = {
-            ltex = {
-              language = 'en-US',
-              checkFrequency = 'save',
-              sentenceCacheSize = 2000,
-              additionalRules = {
-                enablePickyRules = true,
-                motherTongue = 'de_DE',
-              },
-              enabledRules = {
-                en = { 'EN_CONSISTENT_APOS' },
-              },
-              disabledRules = {
-                en = { 'WHITESPACE_RULE', 'DASH_RULE', 'TWO_HYPHENS', 'CHANGE', 'ISSUE', 'CHECK', 'ACTUALLY', 'CONSISTENT' },
-              },
-              dictionary = {
-                de = {
-                  'CryptPad',
-                  'Chouhartem',
-                  -- field names
-                  'authors',
-                  'categories',
-                  'created',
-                  'updated',
-                  'title',
-                  'meta',
-                  'CryptPad',
-                  'Stoettner',
-                  'OpenSearch',
-                  'Vegard',
-                },
-                en = {
-                  'CryptPad',
-                  'Stoettner',
-                  'OpenSearch',
-                  'Vegard',
-                },
-              },
-            },
-          },
-        },
         -- Python
         pyright = {
           settings = {
@@ -883,7 +814,6 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
-        'ltex-ls-plus', -- Language tool server for text checking
         'ruff', -- Python linting and formatting
         'ansible-lint', -- Ansible linting
         'ansiblels',
