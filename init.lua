@@ -922,7 +922,6 @@ require('lazy').setup({
     ---@diagnostic disable-next-line: missing-fields
     opts = { signs = false },
   },
-
   { -- Collection of various small independent plugins/modules
     'nvim-mini/mini.nvim',
     config = function()
@@ -939,7 +938,7 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      -- require('mini.surround').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -947,7 +946,6 @@ require('lazy').setup({
       local statusline = require 'mini.statusline'
       -- set use_icons to true if you have a Nerd Font
       statusline.setup { use_icons = vim.g.have_nerd_font }
-
       -- You can configure sections in the statusline by overriding their
       -- default behavior. For example, here we set the section for
       -- cursor location to LINE:COLUMN
@@ -1125,7 +1123,7 @@ require('lazy').setup({
       )
       vim.api.nvim_set_keymap(
         'n',
-        '<localleader>sc',
+        '<localleader>se',
         ":r! sn_case_with_comments.py -n %:t:r -f <C-r>=strftime('%Y-')<CR>",
         { desc = 'Get comments from date for this case', noremap = true, silent = false }
       )
