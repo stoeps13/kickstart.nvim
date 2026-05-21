@@ -108,6 +108,18 @@ return {
     t '[Jump to comments](#Comments)',
   }),
 
+  s('note', {
+    t { '> [!note] NOTE', '> ' },
+    i(1, 'your note'),
+  }),
+
+  s('warn', {
+    t '> [!WARNING]',
+    t { '', '> ' },
+    i(1, 'Warning content'),
+    i(0),
+  }),
+
   s('hdate', {
     f(hdate, {}),
   }),

@@ -6,7 +6,7 @@ return {
     config = function()
       local lint = require 'lint'
       lint.linters.ansiblelint = {
-        cmd = vim.env.HOME .. '/.local/bin/ansible-lint',
+        cmd = '/usr/bin/ansible-lint',
         stdin = false,
         args = { '-f', 'codeclimate' },
         stream = 'stdout',
@@ -36,13 +36,13 @@ return {
           -- rst = { 'vale' },
           ruby = { 'ruby' },
           terraform = { 'tflint' },
-          text = { 'vale' },
+          -- text = { 'vale' },
           sh = { 'shellcheck' },
           -- vimwiki = { 'vale' },
           python = { 'ruff' },
           yaml = { 'yamllint' },
           ansible = { 'ansiblelint' },
-          --typst = { 'tinymist' },
+          typst = { 'tinymist' },
         }
       --
       -- You can disable the default linters by setting their filetypes to nil:
@@ -59,6 +59,7 @@ return {
 
       -- Create autocommand which carries out the actual linting
       -- on the specified events.
+      lint.linters.vale.args = { '--no-exit', '--minAlertLevel', 'warning', '--output', 'JSON', '--ext', lint.linters.vale.args[5] }
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
       vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
         group = lint_augroup,

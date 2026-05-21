@@ -188,13 +188,14 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
 vim.diagnostic.config {
-  update_in_insert = false,
+  update_in_insert = true,
   severity_sort = true,
+  signs = { severity = { min = vim.diagnostic.severity.INFO } },
   float = { border = 'rounded', source = 'if_many' },
-  underline = { severity = { min = vim.diagnostic.severity.WARN } },
+  underline = { severity = { min = vim.diagnostic.severity.INFO } },
 
   -- Can switch between these as you prefer
-  virtual_text = true, -- Text shows up at the end of the line
+  virtual_text = { severity = { min = vim.diagnostic.severity.INFO } }, -- Text shows up at the end of the line
   virtual_lines = false, -- Text shows up underneath the line, with virtual lines
 
   -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
@@ -681,8 +682,40 @@ require('lazy').setup({
           filetypes = { 'html', 'templ' },
         },
         tinymist = {},
-        prettier = {},
-        -- vale = {},
+        -- prettier = {},
+        harper_ls = {
+          settings = {
+            ['harper-ls'] = {
+              userDictPath = '',
+              workspaceDictPath = '',
+              fileDictPath = '',
+              linters = {
+                SpellCheck = true,
+                SpelledNumbers = false,
+                AnA = true,
+                SentenceCapitalization = true,
+                UnclosedQuotes = true,
+                WrongApostrophe = false,
+                LongSentences = true,
+                RepeatedWords = true,
+                Spaces = true,
+                CorrectNumberSuffix = true,
+              },
+              codeActions = {
+                ForceStable = false,
+              },
+              markdown = {
+                IgnoreLinkTitle = false,
+              },
+              diagnosticSeverity = 'hint',
+              isolateEnglish = false,
+              dialect = 'American',
+              maxFileLength = 120000,
+              ignoredLintsPath = '',
+              excludePatterns = {},
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -1071,7 +1104,7 @@ require('lazy').setup({
           local filename = vim.fn.expand '%:r'
           local path_parts = vim.fn.split(filename, '/')
           local title = path_parts[#path_parts] -- get the last element
-          local meetings_output = vim.fn.system('vimwiki-cal.sh -d ' .. title .. ' -n 1 | /usr/bin/grep -v "' .. title .. '"')
+          local meetings_output = vim.fn.system('vimwiki-cal.sh -d ' .. title .. ' -n 1 2>/dev/null | /usr/bin/grep -v "' .. title .. '"')
           local meeting_lines = vim.fn.split(meetings_output, '\n')
           meeting_lines = vim.tbl_filter(function(line)
             return line ~= ''
@@ -1130,7 +1163,7 @@ require('lazy').setup({
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>sb',
-        ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-')<CR>",
+        ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-') 2>/dev/null <CR>",
         { desc = 'Add appointments for calendar week', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
@@ -1148,7 +1181,7 @@ require('lazy').setup({
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>st',
-        ':r ! vimwiki-cal.sh -d %:t:r -n 1 | /usr/bin/grep -v "2026-" <CR>',
+        ':r ! vimwiki-cal.sh -d %:t:r -n 1  2>/dev/null | /usr/bin/grep -v "2026-" <CR>',
         { desc = 'Add today appointments', noremap = true, silent = false }
       )
       vim.api.nvim_set_keymap(
