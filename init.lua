@@ -154,6 +154,8 @@ vim.o.splitbelow = true
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.opt.showbreak = ' ↪ '
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
 
 -- Preview substitutions live, as you type!
 vim.o.inccommand = 'split'
@@ -177,7 +179,7 @@ vim.filetype.add {
     ['.*handlers/.*%.ya?ml'] = 'yaml.ansible',
   },
 }
-vim.env.PATH = vim.env.HOME .. '/.local/bin:' .. vim.env.PATH
+vim.env.PATH = vim.env.HOME .. '/.local/bin:' .. vim.env.HOME .. '/.local/share/nvim/mason/bin:' .. vim.env.PATH
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -203,6 +205,12 @@ vim.diagnostic.config {
 }
 
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', ']g', function()
+  vim.diagnostic.jump { count = 1, float = true }
+end)
+vim.keymap.set('n', '[g', function()
+  vim.diagnostic.jump { count = -1, float = true }
+end)
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -684,9 +692,18 @@ require('lazy').setup({
         tinymist = {},
         -- prettier = {},
         harper_ls = {
+          filetypes = {
+            'markdown',
+            'vimwiki',
+            'gitcommit',
+            'text',
+            'asciidoc',
+            'rst',
+            'mail',
+          },
           settings = {
             ['harper-ls'] = {
-              userDictPath = '',
+              userDictPath = '~/.config/nvim/harper-user.dict',
               workspaceDictPath = '',
               fileDictPath = '',
               linters = {
@@ -695,7 +712,7 @@ require('lazy').setup({
                 AnA = true,
                 SentenceCapitalization = true,
                 UnclosedQuotes = true,
-                WrongApostrophe = false,
+                WrongApostrophe = true,
                 LongSentences = true,
                 RepeatedWords = true,
                 Spaces = true,
@@ -705,9 +722,9 @@ require('lazy').setup({
                 ForceStable = false,
               },
               markdown = {
-                IgnoreLinkTitle = false,
+                IgnoreLinkTitle = true,
               },
-              diagnosticSeverity = 'hint',
+              diagnosticSeverity = 'warning',
               isolateEnglish = false,
               dialect = 'American',
               maxFileLength = 120000,
@@ -732,6 +749,7 @@ require('lazy').setup({
         'ansible-lint', -- Ansible linting
         'ansiblels',
         'yamllint', -- YAML linting
+        'harper-ls',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -1109,16 +1127,17 @@ require('lazy').setup({
           meeting_lines = vim.tbl_filter(function(line)
             return line ~= ''
           end, meeting_lines)
-          local weather_output = vim.fn.system 'weather.sh Heppenheim'
-          local weather_lines = vim.fn.split(weather_output, '\n')
-          weather_lines = vim.tbl_filter(function(line)
-            return line ~= ''
-          end, weather_lines)
+          -- local weather_output =
+          --   vim.fn.system 'echo "Weather at "$(date +%H:%M)":" $(curl -s wttr.in/heppenheim?format="+%c+%t+%h+%w+%m+%p+%P+%u\n" | sed "s/  / /g")'
+          -- local weather_lines = vim.fn.split(weather_output, '\n')
+          -- weather_lines = vim.tbl_filter(function(line)
+          --   return line ~= ''
+          -- end, weather_lines)
           local lines = {
             '# ' .. title,
             '',
           }
-          vim.list_extend(lines, weather_lines)
+          -- vim.list_extend(lines, weather_lines)
           vim.list_extend(lines, {
             '',
             '## Meetings',
@@ -1166,6 +1185,9 @@ require('lazy').setup({
         ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-') 2>/dev/null <CR>",
         { desc = 'Add appointments for calendar week', noremap = true, silent = false }
       )
+      vim.keymap.set('n', '<localleader>sW', function()
+        vim.cmd [[r ! bash -c 'echo "Weather at $(date +\%H:\%M): $(curl -s wttr.in/heppenheim?format="+\%c+\%t+\%h+\%w+\%m+\%p+\%P+\%u")" | sed \'s/  / /g\'']]
+      end, { desc = 'Show actual weather' })
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>si',
