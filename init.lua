@@ -154,8 +154,6 @@ vim.o.splitbelow = true
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.opt.showbreak = ' ↪ '
-vim.opt.tabstop = 2
-vim.opt.shiftwidth = 2
 
 -- Preview substitutions live, as you type!
 vim.o.inccommand = 'split'
@@ -179,7 +177,7 @@ vim.filetype.add {
     ['.*handlers/.*%.ya?ml'] = 'yaml.ansible',
   },
 }
-vim.env.PATH = vim.env.HOME .. '/.local/bin:' .. vim.env.HOME .. '/.local/share/nvim/mason/bin:' .. vim.env.PATH
+vim.env.PATH = vim.env.HOME .. '/.local/bin:' .. vim.env.PATH
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -205,12 +203,6 @@ vim.diagnostic.config {
 }
 
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
-vim.keymap.set('n', ']g', function()
-  vim.diagnostic.jump { count = 1, float = true }
-end)
-vim.keymap.set('n', '[g', function()
-  vim.diagnostic.jump { count = -1, float = true }
-end)
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -691,45 +683,14 @@ require('lazy').setup({
         },
         tinymist = {},
         -- prettier = {},
-        harper_ls = {
-          filetypes = {
-            'markdown',
-            'vimwiki',
-            'gitcommit',
-            'text',
-            'asciidoc',
-            'rst',
-            'mail',
-          },
+        vale_ls = {
+          cmd = { 'vale-ls' },
+          filetypes = { 'asciidoc', 'markdown', 'text', 'tex', 'rst', 'html', 'xml' },
+          root_markers = { '.vale.ini', '.git' },
+          single_file_support = true,
           settings = {
-            ['harper-ls'] = {
-              userDictPath = '~/.config/nvim/harper-user.dict',
-              workspaceDictPath = '',
-              fileDictPath = '',
-              linters = {
-                SpellCheck = true,
-                SpelledNumbers = false,
-                AnA = true,
-                SentenceCapitalization = true,
-                UnclosedQuotes = true,
-                WrongApostrophe = true,
-                LongSentences = true,
-                RepeatedWords = true,
-                Spaces = true,
-                CorrectNumberSuffix = true,
-              },
-              codeActions = {
-                ForceStable = false,
-              },
-              markdown = {
-                IgnoreLinkTitle = true,
-              },
-              diagnosticSeverity = 'warning',
-              isolateEnglish = false,
-              dialect = 'American',
-              maxFileLength = 120000,
-              ignoredLintsPath = '',
-              excludePatterns = {},
+            vale = {
+              configPath = vim.env.HOME .. '/.config/vale/.vale.ini',
             },
           },
         },
@@ -749,7 +710,6 @@ require('lazy').setup({
         'ansible-lint', -- Ansible linting
         'ansiblels',
         'yamllint', -- YAML linting
-        'harper-ls',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -1127,17 +1087,16 @@ require('lazy').setup({
           meeting_lines = vim.tbl_filter(function(line)
             return line ~= ''
           end, meeting_lines)
-          -- local weather_output =
-          --   vim.fn.system 'echo "Weather at "$(date +%H:%M)":" $(curl -s wttr.in/heppenheim?format="+%c+%t+%h+%w+%m+%p+%P+%u\n" | sed "s/  / /g")'
-          -- local weather_lines = vim.fn.split(weather_output, '\n')
-          -- weather_lines = vim.tbl_filter(function(line)
-          --   return line ~= ''
-          -- end, weather_lines)
+          local weather_output = vim.fn.system 'weather.sh Heppenheim'
+          local weather_lines = vim.fn.split(weather_output, '\n')
+          weather_lines = vim.tbl_filter(function(line)
+            return line ~= ''
+          end, weather_lines)
           local lines = {
             '# ' .. title,
             '',
           }
-          -- vim.list_extend(lines, weather_lines)
+          vim.list_extend(lines, weather_lines)
           vim.list_extend(lines, {
             '',
             '## Meetings',
@@ -1185,9 +1144,6 @@ require('lazy').setup({
         ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-') 2>/dev/null <CR>",
         { desc = 'Add appointments for calendar week', noremap = true, silent = false }
       )
-      vim.keymap.set('n', '<localleader>sW', function()
-        vim.cmd [[r ! bash -c 'echo "Weather at $(date +\%H:\%M): $(curl -s wttr.in/heppenheim?format="+\%c+\%t+\%h+\%w+\%m+\%p+\%P+\%u")" | sed \'s/  / /g\'']]
-      end, { desc = 'Show actual weather' })
       vim.api.nvim_set_keymap(
         'n',
         '<localleader>si',
@@ -1328,7 +1284,96 @@ require('lazy').setup({
       { '<leader>gg', '<cmd>Neogit<cr>', desc = 'Show Neogit UI' },
     },
   },
+  {
+    'nickjvandyke/opencode.nvim',
+    version = '*', -- Latest stable release
+    config = function()
+      ---@type opencode.Opts
+      vim.g.opencode_opts = {
+        -- Your configuration, if any; goto definition on the type for details
+      }
 
+      vim.o.autoread = true -- Required for `vim.g.opencode_opts.events.reload`
+
+      -- Recommended/example keymaps
+      vim.keymap.set({ 'n', 'x' }, '<leader>oa', function()
+        require('opencode').ask '@this: '
+      end, { desc = 'Ask OpenCode…' })
+      vim.keymap.set({ 'n', 'x' }, '<leader>os', function()
+        require('opencode').select()
+      end, { desc = 'Select OpenCode…' })
+
+      vim.keymap.set({ 'n', 'x' }, 'go', function()
+        return require('opencode').operator '@this '
+      end, { desc = 'Append range to OpenCode', expr = true })
+      vim.keymap.set('n', 'goo', function()
+        return require('opencode').operator '@this ' .. '_'
+      end, { desc = 'Append line to OpenCode', expr = true })
+
+      vim.keymap.set('n', '<S-C-u>', function()
+        require('opencode').command 'session.half.page.up'
+      end, { desc = 'Scroll OpenCode up' })
+      vim.keymap.set('n', '<S-C-d>', function()
+        require('opencode').command 'session.half.page.down'
+      end, { desc = 'Scroll OpenCode down' })
+    end,
+  },
+  {
+    'folke/snacks.nvim',
+    priority = 1000,
+    lazy = false,
+    opts = {
+      input = { enabled = true },
+      picker = {
+        enabled = true,
+        win = {
+          input = {
+            keys = {
+              ['<a-a>'] = { 'opencode_send', mode = { 'n', 'i' } },
+            },
+          },
+        },
+        actions = {
+          opencode_send = function(picker)
+            local items = vim.tbl_map(function(item)
+              return item.file and require('opencode').format { path = item.file, from = item.pos, to = item.end_pos } or item.text
+            end, picker:selected { fallback = true })
+
+            require('opencode').prompt(table.concat(items, ', ') .. ' ')
+          end,
+        },
+      },
+    },
+  },
+  {
+    'saghen/blink.cmp',
+    opts = {
+      sources = {
+        default = { 'lsp', 'buffer' },
+        per_filetype = {
+          opencode_ask = { 'lsp', 'buffer' },
+        },
+        providers = { lsp = { fallbacks = {} } },
+      },
+    },
+  },
+  {
+    'nvim-lualine/lualine.nvim',
+    opts = {
+      sections = {
+        lualine_z = {
+          function()
+            local oc = require 'opencode'
+            if type(oc.statusline) == 'function' then
+              return oc.statusline()
+            else
+              return oc.statusline or ''
+            end
+          end,
+        },
+      },
+    },
+  },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     lazy = false,

@@ -42,7 +42,7 @@ return {
           python = { 'ruff' },
           yaml = { 'yamllint' },
           ansible = { 'ansiblelint' },
-          typst = { 'tinymist' },
+          -- typst = { 'tinymist' },
         }
       --
       -- You can disable the default linters by setting their filetypes to nil:
