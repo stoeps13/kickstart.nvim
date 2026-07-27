@@ -10,4 +10,5 @@ lazy-lock.json
 CLAUDE.md
 
 # Claude Code session files
-.claude/autoload
+.claude/
+autoload
