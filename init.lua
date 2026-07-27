@@ -250,7 +250,38 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.hl.on_yank()
   end,
 })
+-- [[ Hugo Template Detection (The "Force" Method) ]]
+vim.api.nvim_create_autocmd('BufReadPost', {
+  pattern = '*.html',
+  callback = function(args)
+    local buf = args.buf
+    -- We use a small delay to ensure the buffer is fully loaded and
+    -- Neovim has finished its initial filetype detection.
+    vim.schedule(function()
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
 
+      -- We check the first 50 lines for '{{'
+      -- This is much faster and more reliable than a full buffer search
+      local lines = vim.api.nvim_buf_get_lines(buf, 0, 50, false)
+      local has_hugo = false
+      for _, line in ipairs(lines) do
+        if line:find '{{' then
+          has_hugo = true
+          break
+        end
+      end
+
+      if has_hugo then
+        -- Force the filetype to 'hugo'
+        vim.bo[buf].filetype = 'hugo'
+        -- Set the safety flag for Conform
+        vim.b[buf].hugo_template = true
+      end
+    end)
+  end,
+})
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
