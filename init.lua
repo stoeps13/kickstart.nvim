@@ -682,7 +682,23 @@ require('lazy').setup({
           filetypes = { 'html', 'templ' },
         },
         tinymist = {},
-        -- prettier = {},
+        prettier = {
+          cmd = { 'prettier' },
+          filetypes = {
+            'css',
+            'graphql',
+            'html',
+            'javascript',
+            'javascriptreact',
+            'json',
+            'less',
+            'markdown',
+            'scss',
+            'typescript',
+            'typescriptreact',
+            'yaml',
+          },
+        },
         vale_ls = {
           cmd = { 'vale-ls' },
           filetypes = { 'asciidoc', 'markdown', 'text', 'tex', 'rst', 'html', 'xml' },
@@ -757,8 +773,9 @@ require('lazy').setup({
         lua = { 'stylua' },
         python = { 'ruff', 'black' },
         yaml = { 'prettier' },
-        html = { 'prettier' },
+        html = { 'lsp' },
         json = { 'prettier' },
+        markdown = { 'prettier' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -968,6 +985,15 @@ require('lazy').setup({
       -- ... and there is more!
       --  Check out: https://github.com/nvim-mini/mini.nvim
     end,
+  },
+  {
+    'saattrupdan/pi-agent.nvim',
+    config = function()
+      require('pi-agent').setup()
+    end,
+    keys = {
+      { '<localleader>pi', '<cmd>PiAgent<cr>', mode = 'n', desc = 'Call PiAgent' },
+    },
   },
   {
     'vimwiki/vimwiki',
@@ -1285,94 +1311,17 @@ require('lazy').setup({
     },
   },
   {
-    'nickjvandyke/opencode.nvim',
-    version = '*', -- Latest stable release
-    config = function()
-      ---@type opencode.Opts
-      vim.g.opencode_opts = {
-        -- Your configuration, if any; goto definition on the type for details
-      }
-
-      vim.o.autoread = true -- Required for `vim.g.opencode_opts.events.reload`
-
-      -- Recommended/example keymaps
-      vim.keymap.set({ 'n', 'x' }, '<leader>oa', function()
-        require('opencode').ask '@this: '
-      end, { desc = 'Ask OpenCode…' })
-      vim.keymap.set({ 'n', 'x' }, '<leader>os', function()
-        require('opencode').select()
-      end, { desc = 'Select OpenCode…' })
-
-      vim.keymap.set({ 'n', 'x' }, 'go', function()
-        return require('opencode').operator '@this '
-      end, { desc = 'Append range to OpenCode', expr = true })
-      vim.keymap.set('n', 'goo', function()
-        return require('opencode').operator '@this ' .. '_'
-      end, { desc = 'Append line to OpenCode', expr = true })
-
-      vim.keymap.set('n', '<S-C-u>', function()
-        require('opencode').command 'session.half.page.up'
-      end, { desc = 'Scroll OpenCode up' })
-      vim.keymap.set('n', '<S-C-d>', function()
-        require('opencode').command 'session.half.page.down'
-      end, { desc = 'Scroll OpenCode down' })
-    end,
-  },
-  {
-    'folke/snacks.nvim',
-    priority = 1000,
-    lazy = false,
+    'f-person/auto-dark-mode.nvim',
     opts = {
-      input = { enabled = true },
-      picker = {
-        enabled = true,
-        win = {
-          input = {
-            keys = {
-              ['<a-a>'] = { 'opencode_send', mode = { 'n', 'i' } },
-            },
-          },
-        },
-        actions = {
-          opencode_send = function(picker)
-            local items = vim.tbl_map(function(item)
-              return item.file and require('opencode').format { path = item.file, from = item.pos, to = item.end_pos } or item.text
-            end, picker:selected { fallback = true })
-
-            require('opencode').prompt(table.concat(items, ', ') .. ' ')
-          end,
-        },
-      },
+      -- your configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
     },
   },
   {
-    'saghen/blink.cmp',
-    opts = {
-      sources = {
-        default = { 'lsp', 'buffer' },
-        per_filetype = {
-          opencode_ask = { 'lsp', 'buffer' },
-        },
-        providers = { lsp = { fallbacks = {} } },
-      },
-    },
-  },
-  {
-    'nvim-lualine/lualine.nvim',
-    opts = {
-      sections = {
-        lualine_z = {
-          function()
-            local oc = require 'opencode'
-            if type(oc.statusline) == 'function' then
-              return oc.statusline()
-            else
-              return oc.statusline or ''
-            end
-          end,
-        },
-      },
-    },
+    'chentoast/marks.nvim',
+    event = 'VeryLazy',
+    opts = {},
   },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
