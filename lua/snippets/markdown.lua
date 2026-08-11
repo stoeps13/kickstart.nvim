@@ -97,6 +97,25 @@ return {
     i(0),
   }),
 
+  -- HTML aside notes
+  s('aside', {
+    t { '<aside class="notes">', '' },
+    i(0),
+    t { '', '</aside>' },
+  }),
+
+  s('bgimage', {
+    t { '<!-- .slide: data-background-image="assets/' },
+    i(0),
+    t { '" -->' },
+  }),
+
+  s('speakernotes', {
+    t { '<aside class="notes">', '' },
+    i(0),
+    t { '', '</aside>' },
+  }),
+
   -- Details/Summary
   s('details', {
     t '<details>',
@@ -113,4 +132,3 @@ return {
     f(hdate, {}),
   }),
 }
-

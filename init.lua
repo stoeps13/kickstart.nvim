@@ -278,6 +278,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
         vim.bo[buf].filetype = 'hugo'
         -- Set the safety flag for Conform
         vim.b[buf].hugo_template = true
+        vim.treesitter.language.register('templ', 'hugo')
       end
     end)
   end,
@@ -809,6 +810,7 @@ require('lazy').setup({
         python = { 'ruff', 'black' },
         yaml = { 'prettier' },
         html = { 'lsp' },
+        hugo = {},
         json = { 'prettier' },
         markdown = { 'prettier' },
         -- Conform can also run multiple formatters sequentially
@@ -964,8 +966,11 @@ require('lazy').setup({
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
         styles = {
-          comments = { italic = false }, -- Disable italics in comments
+          comments = { italic = true }, -- Disable italics in comments
         },
+        on_highlights = function(hl, colors)
+          hl.Comment.fg = colors.red
+        end,
       }
 
       -- Load the colorscheme here.
@@ -1258,15 +1263,24 @@ require('lazy').setup({
   -- Better markdown rendering
   {
     'MeanderingProgrammer/render-markdown.nvim',
-    dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' },
-    ---@module 'render-markdown'
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      'echasnovski/mini.nvim',
+    },
+
+    ---@module "render-markdown"
     ---@type render.md.UserConfig
-    opts = {},
+    opts = {
+      file_types = { 'markdown', 'vimwiki' },
+      html = {
+        comment = {
+          conceal = false,
+        },
+      },
+    },
+
     init = function()
       vim.treesitter.language.register('markdown', 'vimwiki')
-      require('render-markdown').setup {
-        file_types = { 'markdown', 'vimwiki' },
-      }
     end,
   },
   -- Paste images from clipboard
