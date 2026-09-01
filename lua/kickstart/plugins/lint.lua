@@ -38,7 +38,7 @@ return {
           golang = { 'gopls' },
           html = { 'htmlhint' },
           json = { 'jsonlint' },
-          markdown = { 'markdownlint' },
+          -- markdown = { 'markdownlint' },
           python = { 'ruff' },
           ruby = { 'ruby' },
           sh = { 'shellcheck' },

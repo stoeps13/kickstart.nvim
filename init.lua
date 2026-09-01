@@ -737,7 +737,7 @@ require('lazy').setup({
         },
         vale_ls = {
           cmd = { 'vale-ls' },
-          filetypes = { 'asciidoc', 'markdown', 'text', 'tex', 'rst', 'html', 'xml' },
+          filetypes = { 'asciidoc', 'text', 'tex', 'rst', 'html', 'xml' },
           root_markers = { '.vale.ini', '.git' },
           single_file_support = true,
           settings = {
@@ -795,7 +795,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        local disable_filetypes = { c = true, cpp = true, markdown = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
         else
@@ -812,7 +812,6 @@ require('lazy').setup({
         html = { 'lsp' },
         hugo = {},
         json = { 'prettier' },
-        markdown = { 'prettier' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -1036,230 +1035,280 @@ require('lazy').setup({
     },
   },
   {
-    'vimwiki/vimwiki',
+    'zk-org/zk-nvim',
+    name = 'zk',
     dependencies = {
-      'mattn/calendar-vim',
-      'WnP/vimwiki_markdown',
-      'michal-h21/vim-zettel',
-      'michal-h21/vimwiki-sync',
-      'majutsushi/tagbar',
-      'tbabej/taskwiki',
-      'junegunn/fzf',
+      { 'junegunn/fzf', build = './install --bin' },
       'junegunn/fzf.vim',
     },
-    init = function()
-      -- Default directory, syntax and file type,
-      -- symbols for spaces, auto re-index tags db
-      vim.g.vimwiki_list = {
-        {
-          path = '~/vimwiki/latest',
-          syntax = 'markdown',
-          ext = '.md',
-          links_space_char = '_',
-          path_html = '~/vimwiki/latest/site_html/',
-          custom_wiki2html = 'vimwiki_markdown',
-          auto_tags = 1,
-          auto_diary_index = 1,
-        },
-        {
-          path = '~/vimwiki/archive',
-          syntax = 'markdown',
-          ext = '.md',
-          links_space_char = '_',
-          path_html = '~/vimwiki/archive/site_html/',
-          custom_wiki2html = 'vimwiki_markdown',
-          auto_tags = 1,
-          auto_diary_index = 1,
-        },
-        {
-          path = '~/vimwiki/hcl-cases',
-          syntax = 'markdown',
-          ext = '.md',
-          links_space_char = '_',
-          path_html = '~/vimwiki/hcl-cases/site_html/',
-          custom_wiki2html = 'vimwiki_markdown',
-          auto_tags = 1,
-          auto_diary_index = 1,
-        },
-        {
-          path = '~/vimwiki/hcl-kb',
-          syntax = 'markdown',
-          ext = '.md',
-          links_space_char = '_',
-          path_html = '~/vimwiki/hcl-kb/site_html/',
-          custom_wiki2html = 'vimwiki_markdown',
-          auto_tags = 1,
-          auto_diary_index = 1,
-        },
-        {
-          path = '~/vimwiki/pentest',
-          syntax = 'markdown',
-          ext = '.md',
-          links_space_char = '_',
-          path_html = '~/vimwiki/pentest/site_html/',
-          custom_wiki2html = 'vimwiki_markdown',
-          auto_tags = 1,
-          auto_diary_index = 1,
-        },
-      }
-      vim.g.vimwiki_global_ext = 0
+    opts = {
+      -- See Setup section below
+      picker = 'fzf',
+      tags = {
+        multi_select_strategy = 'AND',
+      },
+    },
+    config = function(_, opts)
+      require('zk').setup(opts)
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        pattern = '*.md',
+        callback = function(args)
+          local lines = vim.api.nvim_buf_get_lines(args.buf, 0, -1, false)
+          local in_frontmatter = false
 
-      -- vim.g.markdown_folding = 1
-      vim.g.vimwiki_folding = 'syntax'
-      vim.g.vimwiki_header_type = '#'
-      vim.cmd [[
-         autocmd FileType vimwiki setlocal foldlevel=99
-      ]]
-      vim.g.vimwiki_fold_blank_lines = 0
-      -- Syntax highlighting for code blocks
-      vim.g.vimwiki_syntax_plugins = {
-        codeblock = {
-          ['```lua'] = { parser = 'lua' },
-          ['```python'] = { parser = 'python' },
-          ['```javascript'] = { parser = 'javascript' },
-          ['```bash'] = { parser = 'bash' },
-          ['```html'] = { parser = 'html' },
-          ['```css'] = { parser = 'css' },
-          ['```c'] = { parser = 'c' },
-          ['```sql'] = { parser = 'sql' },
-        },
-      }
-      vim.g.nv_search_paths = { '~/vimwiki/latest', '~/vimwiki/hcl-cases', '~/vimwiki/hcl-kb', '~/vimwiki/pentest', '~/vimwiki/archive' }
-      vim.g.zettel_format = '%y%m%d-%file_no'
-      -- vim.g.zettel_default_mappings = 0
-      vim.g.zettel_options = {
-        {
-          template = '~/vimwiki/template.tpl',
-          disable_front_matter = 1,
-        },
-      }
-      vim.g.zettel_date_format = '%Y-%m-%d'
-      vim.g.taskwiki_disable_concealcursor = true
-      vim.g.taskwiki_taskrc_location = '~/.config/task/taskrc'
-      vim.conceallevel = 0
-      vim.opt.conceallevel = 0
-      -- Add autocmd to create diary pages with different content than the template
-      local _vimwiki = vim.api.nvim_create_augroup('_vimwiki', { clear = true })
-      -- Template for diary entries
-      -- adding appointments/meetings with script from khal
-      vim.api.nvim_create_autocmd({ 'BufNewFile' }, {
-        pattern = { '*/vimwiki/2025/diary/*.md', '*/vimwiki/2026/diary/*.md' },
-        callback = function()
-          local filename = vim.fn.expand '%:r'
-          local path_parts = vim.fn.split(filename, '/')
-          local title = path_parts[#path_parts] -- get the last element
-          local meetings_output = vim.fn.system('vimwiki-cal.sh -d ' .. title .. ' -n 1 2>/dev/null | /usr/bin/grep -v "' .. title .. '"')
-          local meeting_lines = vim.fn.split(meetings_output, '\n')
-          meeting_lines = vim.tbl_filter(function(line)
-            return line ~= ''
-          end, meeting_lines)
-          local weather_output = vim.fn.system 'weather.sh Heppenheim'
-          local weather_lines = vim.fn.split(weather_output, '\n')
-          weather_lines = vim.tbl_filter(function(line)
-            return line ~= ''
-          end, weather_lines)
-          local lines = {
-            '# ' .. title,
-            '',
-          }
-          vim.list_extend(lines, weather_lines)
-          vim.list_extend(lines, {
-            '',
-            '## Meetings',
-            '',
-          })
-          vim.list_extend(lines, meeting_lines)
-          vim.list_extend(lines, {
-            '',
-            '## Logbook | -COMPLETED +OVERDUE or -COMPLETED +urgent or -COMPLETED scheduled:'
-              .. title
-              .. ' or -COMPLETED due:'
-              .. title
-              .. ' or +ACTIVE | project:INBOX',
-            '',
-            '## Tada List | +COMPLETED end:' .. title,
-            '',
-          })
-          vim.api.nvim_buf_set_lines(0, 0, 0, false, lines)
+          for i, line in ipairs(lines) do
+            if line:match '^%-%-%-$' then
+              if not in_frontmatter then
+                in_frontmatter = true
+              else
+                break
+              end
+            elseif in_frontmatter and line:match '^updated:%s' and not line:match '{{' then
+              local new_line = 'updated: ' .. os.date '%Y-%m-%d %H:%M'
+              vim.api.nvim_buf_set_lines(args.buf, i - 1, i, false, { new_line })
+              return
+            end
+          end
         end,
-        group = _vimwiki,
       })
-      vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]], group = _vimwiki })
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'vimwiki',
-        callback = function()
-          vim.api.nvim_set_keymap('n', '<CR>', ':VimwikiFollowLink<CR>', {})
-        end,
-        group = _vimwiki,
-      })
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>sa',
-        ':r! sn_case_with_comments.py -n %:t:r -l 3 -a<CR>',
-        { desc = 'Get all comments for this case', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>se',
-        ":r! sn_case_with_comments.py -n %:t:r -f <C-r>=strftime('%Y-')<CR>",
-        { desc = 'Get comments from date for this case', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>sb',
-        ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-') 2>/dev/null <CR>",
-        { desc = 'Add appointments for calendar week', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>si',
-        ":r! sn_interloc_overview.py<CR>:put ='Last updated: '.strftime('%Y-%m-%d %H:%M:%S')<CR>",
-        { desc = 'Get open case list', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>sj',
-        ':r! get_interloc_updates.sh "<C-r>=strftime(\'%Y-%m-%d\')<CR>" ~/vimwiki/hcl-cases',
-        { desc = 'updates from Interloc call', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>st',
-        ':r ! vimwiki-cal.sh -d %:t:r -n 1  2>/dev/null | /usr/bin/grep -v "2026-" <CR>',
-        { desc = 'Add today appointments', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>su',
-        ':r ! update_frontmatter.py %<CR>:e!<CR>',
-        { desc = 'Update frontmatter', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap('n', '<localleader>tu', '<cmd>TaskWikiBufferLoad<CR>', { desc = 'Update task list', noremap = true, silent = false })
-      vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
-      vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
-      vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>cf',
-        '<cmd>let @+ = expand("%:t")<CR>',
-        { desc = '[C]opy [f]ilename into clipboard', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>cr',
-        '<cmd>let @+ = expand("%")<CR>',
-        { desc = '[C]opy filename with [r]elative path', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap(
-        'n',
-        '<localleader>cc',
-        '<cmd>let @+ = expand("%:t:r")<CR>',
-        { desc = '[C]opy filename without extension', noremap = true, silent = false }
-      )
-      vim.api.nvim_set_keymap('n', '<localleader>vt', ':VimwikiToggleListItem<CR>', { desc = '[T]oggle list item', noremap = true, silent = false })
-      vim.api.nvim_set_keymap('n', '<localleader>b', '<cmd>bd<CR>', { desc = 'Close Buffer', noremap = true, silent = false })
     end,
   },
+  -- {
+  --   'vimwiki/vimwiki',
+  --   dependencies = {
+  --     'mattn/calendar-vim',
+  --     'WnP/vimwiki_markdown',
+  --     -- 'michal-h21/vim-zettel',
+  --     'michal-h21/vimwiki-sync',
+  --     'majutsushi/tagbar',
+  --     'junegunn/fzf',
+  --     'junegunn/fzf.vim',
+  --     'artempyanykh/marksman',
+  --   },
+  --   init = function()
+  --     -- Default directory, syntax and file type,
+  --     -- symbols for spaces, auto re-index tags db
+  --     vim.g.vimwiki_list = {
+  --       {
+  --         path = '~/vimwiki/latest',
+  --         syntax = 'markdown',
+  --         ext = '.md',
+  --         links_space_char = '_',
+  --         path_html = '~/vimwiki/latest/site_html/',
+  --         custom_wiki2html = 'vimwiki_markdown',
+  --         auto_tags = 1,
+  --         auto_diary_index = 1,
+  --       },
+  --       {
+  --         path = '~/vimwiki/archive',
+  --         syntax = 'markdown',
+  --         ext = '.md',
+  --         links_space_char = '_',
+  --         path_html = '~/vimwiki/archive/site_html/',
+  --         custom_wiki2html = 'vimwiki_markdown',
+  --         auto_tags = 1,
+  --         auto_diary_index = 1,
+  --       },
+  --       {
+  --         path = '~/vimwiki/hcl-cases',
+  --         syntax = 'markdown',
+  --         ext = '.md',
+  --         links_space_char = '_',
+  --         path_html = '~/vimwiki/hcl-cases/site_html/',
+  --         custom_wiki2html = 'vimwiki_markdown',
+  --         auto_tags = 1,
+  --         auto_diary_index = 1,
+  --       },
+  --       {
+  --         path = '~/vimwiki/hcl-kb',
+  --         syntax = 'markdown',
+  --         ext = '.md',
+  --         links_space_char = '_',
+  --         path_html = '~/vimwiki/hcl-kb/site_html/',
+  --         custom_wiki2html = 'vimwiki_markdown',
+  --         auto_tags = 1,
+  --         auto_diary_index = 1,
+  --       },
+  --       {
+  --         path = '~/vimwiki/pentest',
+  --         syntax = 'markdown',
+  --         ext = '.md',
+  --         links_space_char = '_',
+  --         path_html = '~/vimwiki/pentest/site_html/',
+  --         custom_wiki2html = 'vimwiki_markdown',
+  --         auto_tags = 1,
+  --         auto_diary_index = 1,
+  --       },
+  --     }
+  --     vim.g.vimwiki_global_ext = 0
+
+  --     -- vim.g.markdown_folding = 1
+  --     vim.g.vimwiki_folding = 'syntax'
+  --     vim.g.vimwiki_header_type = '#'
+  --     vim.cmd [[
+  --        autocmd FileType vimwiki setlocal foldlevel=99
+  --     ]]
+  --     vim.g.vimwiki_fold_blank_lines = 0
+  --     -- Syntax highlighting for code blocks
+  --     vim.g.vimwiki_syntax_plugins = {
+  --       codeblock = {
+  --         ['```lua'] = { parser = 'lua' },
+  --         ['```python'] = { parser = 'python' },
+  --         ['```javascript'] = { parser = 'javascript' },
+  --         ['```bash'] = { parser = 'bash' },
+  --         ['```html'] = { parser = 'html' },
+  --         ['```css'] = { parser = 'css' },
+  --         ['```c'] = { parser = 'c' },
+  --         ['```sql'] = { parser = 'sql' },
+  --       },
+  --     }
+  --     vim.g.nv_search_paths = { '~/vimwiki/latest', '~/vimwiki/hcl-cases', '~/vimwiki/hcl-kb', '~/vimwiki/pentest', '~/vimwiki/archive' }
+  --     vim.g.zettel_format = '%y%m%d-%file_no'
+  --     -- vim.g.zettel_default_mappings = 0
+  --     vim.g.zettel_options = {
+  --       {
+  --         template = '~/vimwiki/template.tpl',
+  --         disable_front_matter = 1,
+  --       },
+  --     }
+  --     vim.g.zettel_date_format = '%Y-%m-%d'
+  --     vim.conceallevel = 0
+  --     vim.opt.conceallevel = 0
+  --     -- Add autocmd to create diary pages with different content than the template
+  --     local _vimwiki = vim.api.nvim_create_augroup('_vimwiki', { clear = true })
+  --     -- Template for diary entries
+  --     -- adding appointments/meetings with script from khal
+  --     vim.api.nvim_create_autocmd({ 'BufNewFile', 'BufReadPost' }, {
+  --       pattern = vim.fn.expand('~/zk/diary') .. '/*.md',
+  --       callback = function()
+  --         -- `zk new` creates the file before Neovim opens it, so BufNewFile
+  --         -- is not reliable. Replace only the small, freshly-created template.
+  --         if vim.b.zk_diary_initialized or vim.fn.search('^## Meetings$', 'nw') > 0 then return end
+  --         if vim.fn.line('$') > 8 then return end
+  --         vim.b.zk_diary_initialized = true
+  --         local filename = vim.fn.expand '%:r'
+  --         local path_parts = vim.fn.split(filename, '/')
+  --         local title = path_parts[#path_parts] -- get the last element
+  --         local meetings_output = vim.fn.system('vimwiki-cal.sh -d ' .. title .. ' -n 1 2>/dev/null | /usr/bin/grep -v "' .. title .. '"')
+  --         local meeting_lines = vim.fn.split(meetings_output, '\n')
+  --         meeting_lines = vim.tbl_filter(function(line)
+  --           return line ~= ''
+  --         end, meeting_lines)
+  --         local weather_output = vim.fn.system 'weather.sh Heppenheim'
+  --         local weather_lines = vim.fn.split(weather_output, '\n')
+  --         weather_lines = vim.tbl_filter(function(line)
+  --           return line ~= ''
+  --         end, weather_lines)
+  --         local lines = {
+  --           '---',
+  --           'title: "' .. title .. '"',
+  --           'created: ' .. os.date('%Y-%m-%d %H:%M'),
+  --           'updated: ' .. os.date('%Y-%m-%d %H:%M'),
+  --           'tags: ["diary"]',
+  --           '---',
+  --           '',
+  --         }
+  --         vim.list_extend(lines, weather_lines)
+  --         vim.list_extend(lines, {
+  --           '',
+  --           '## Meetings',
+  --           '',
+  --         })
+  --         vim.list_extend(lines, meeting_lines)
+  --         vim.list_extend(lines, {
+  --           '',
+  --           '## Logbook | -COMPLETED +OVERDUE or -COMPLETED +urgent or -COMPLETED scheduled:'
+  --             .. title
+  --             .. ' or -COMPLETED due:'
+  --             .. title
+  --             .. ' or +ACTIVE | project:INBOX',
+  --           '',
+  --         })
+  --         vim.api.nvim_buf_set_lines(0, 0, 0, false, lines)
+  --       end,
+  --       group = _vimwiki,
+  --     })
+  --     vim.api.nvim_create_autocmd('FileType', { pattern = 'vimwiki', command = [[unmap <buffer><silent> <CR>]], group = _vimwiki })
+  --     vim.api.nvim_create_autocmd('FileType', {
+  --       pattern = 'vimwiki',
+  --       callback = function()
+  --         vim.api.nvim_set_keymap('n', '<CR>', ':VimwikiFollowLink<CR>', {})
+  --       end,
+  --       group = _vimwiki,
+  --     })
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>sa',
+  --       ':r! sn_case_with_comments.py -n %:t:r -l 3 -a<CR>',
+  --       { desc = 'Get all comments for this case', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>se',
+  --       ":r! sn_case_with_comments.py -n %:t:r -f <C-r>=strftime('%Y-')<CR>",
+  --       { desc = 'Get comments from date for this case', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>sb',
+  --       ":r ! vimwiki-cal.sh -n 7 -d <C-r>=strftime('%Y-') 2>/dev/null <CR>",
+  --       { desc = 'Add appointments for calendar week', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>si',
+  --       ":r! sn_interloc_overview.py<CR>:put ='Last updated: '.strftime('%Y-%m-%d %H:%M:%S')<CR>",
+  --       { desc = 'Get open case list', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>sj',
+  --       ':r! get_interloc_updates.sh "<C-r>=strftime(\'%Y-%m-%d\')<CR>" ~/vimwiki/hcl-cases',
+  --       { desc = 'updates from Interloc call', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>st',
+  --       ':r ! vimwiki-cal.sh -d %:t:r -n 1  2>/dev/null | /usr/bin/grep -v "2026-" <CR>',
+  --       { desc = 'Add today appointments', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>su',
+  --       ':r ! update_frontmatter.py %<CR>:e!<CR>',
+  --       { desc = 'Update frontmatter', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>zD',
+  --       [[<cmd>execute 'edit ' .. fnameescape(expand('~/zk/diary/' .. strftime('%Y-%m-%d', localtime() + 86400) .. '.md'))<CR>]],
+  --       { desc = 'Create tomorrow\'s zk diary note', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap('n', '<localleader>zn', '<cmd>ZettelNew<CR>', { desc = 'New Zettel', noremap = true, silent = false })
+  --     vim.api.nvim_set_keymap('n', '<localleader>zo', '<cmd>ZettelOpen<CR>', { desc = 'Open Zettel', noremap = true, silent = false })
+  --     vim.api.nvim_set_keymap('n', '<localleader>zs', '<cmd>ZettelSearch<CR>', { desc = 'Search Zettel', noremap = true, silent = false })
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>cf',
+  --       '<cmd>let @+ = expand("%:t")<CR>',
+  --       { desc = '[C]opy [f]ilename into clipboard', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>cr',
+  --       '<cmd>let @+ = expand("%")<CR>',
+  --       { desc = '[C]opy filename with [r]elative path', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap(
+  --       'n',
+  --       '<localleader>cc',
+  --       '<cmd>let @+ = expand("%:t:r")<CR>',
+  --       { desc = '[C]opy filename without extension', noremap = true, silent = false }
+  --     )
+  --     vim.api.nvim_set_keymap('n', '<localleader>vt', ':VimwikiToggleListItem<CR>', { desc = '[T]oggle list item', noremap = true, silent = false })
+  --     vim.api.nvim_set_keymap('n', '<localleader>b', '<cmd>bd<CR>', { desc = 'Close Buffer', noremap = true, silent = false })
+  --   end,
+  -- },
   -- Better markdown rendering
   {
     'MeanderingProgrammer/render-markdown.nvim',
@@ -1456,6 +1505,71 @@ require('lazy').setup({
     },
   },
 })
+
+-- Populate newly created zk diary notes with dynamic weather and meetings.
+local function diary_date()
+  for _, line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+    local date = line:match('^title:%s*["\']?(%d%d%d%d%-%d%d%-%d%d)')
+    if date then return date end
+  end
+  return nil
+end
+
+vim.keymap.set('n', '<localleader>zw', function()
+  local date = diary_date()
+  if not date then return vim.notify('No diary date in frontmatter', vim.log.levels.WARN) end
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local finish, delimiters = nil, 0
+  for i, line in ipairs(lines) do
+    if line == '---' then
+      delimiters = delimiters + 1
+      if delimiters == 2 then finish = i; break end
+    end
+  end
+  if not finish then return vim.notify('No frontmatter found', vim.log.levels.WARN) end
+  local weather_line = finish + 1
+  while weather_line <= #lines and lines[weather_line] == '' do weather_line = weather_line + 1 end
+  if weather_line > #lines or lines[weather_line]:match('^## ') then
+    return vim.notify('No weather line found', vim.log.levels.WARN)
+  end
+  local weather = vim.fn.systemlist('weather.sh Heppenheim')
+  vim.api.nvim_buf_set_lines(0, weather_line - 1, weather_line, false, { weather[1] or '' })
+end, { desc = 'Insert diary weather' })
+
+vim.keymap.set('n', '<localleader>zm', function()
+  local date = diary_date()
+  if not date then return vim.notify('No diary date in frontmatter', vim.log.levels.WARN) end
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local start
+  for i, line in ipairs(lines) do if line == '## Meetings' then start = i; break end end
+  if not start then return vim.notify('No ## Meetings heading', vim.log.levels.WARN) end
+  local finish = #lines + 1
+  for i = start + 1, #lines do if lines[i]:match('^## ') then finish = i; break end end
+  local meetings = vim.fn.systemlist('vimwiki-cal.sh -d ' .. vim.fn.shellescape(date) .. ' -n 1 2>/dev/null')
+  if meetings[1] and meetings[1]:match('^## %[') then table.remove(meetings, 1) end
+  while meetings[1] == '' do table.remove(meetings, 1) end
+  local replacement = { '## Meetings', '' }; vim.list_extend(replacement, meetings)
+  vim.api.nvim_buf_set_lines(0, start - 1, finish - 1, false, replacement)
+end, { desc = 'Insert diary meetings' })
+
+vim.api.nvim_create_user_command('Vale', function()
+  require('lint').try_lint('vale')
+end, { desc = 'Run Vale on the current buffer' })
+vim.keymap.set('n', '<localleader>vv', '<Cmd>Vale<CR>', { desc = 'Run Vale' })
+vim.keymap.set('n', '<localleader>vh', function()
+  vim.diagnostic.enable(false, { bufnr = 0 })
+end, { desc = 'Hide diagnostics' })
+vim.keymap.set('n', '<localleader>vs', function()
+  vim.diagnostic.enable(true, { bufnr = 0 })
+end, { desc = 'Show diagnostics' })
+
+vim.keymap.set('n', '<localleader>zs', '<Cmd>ZkNotes<CR>', { desc = 'Search zk notes' })
+
+vim.keymap.set('n', '<localleader>zD', function()
+  local input = vim.fn.input('Date: ', os.date('%Y-%m-%d', os.time() + 86400 * 1))
+  local date = vim.fn.trim(vim.fn.system('date -d ' .. vim.fn.shellescape(input) .. ' +%Y-%m-%d 2>/dev/null'))
+  if date ~= '' then vim.cmd.edit(vim.fn.fnameescape(vim.fn.expand('~/zk/diary/' .. date .. '.md'))) end
+end, { desc = 'Create diary entry for date' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
