@@ -279,6 +279,11 @@ vim.api.nvim_create_autocmd('FileType', {
         end
       end
     end, { buffer = args.buf, desc = 'Jump to previous Markdown link' })
+
+    vim.keymap.set('n', '<CR>', vim.lsp.buf.definition, {
+      buffer = args.buf,
+      desc = 'Open Markdown link',
+    })
   end,
 })
 -- [[ Hugo Template Detection (The "Force" Method) ]]
