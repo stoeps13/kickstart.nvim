@@ -257,6 +257,8 @@ vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('kickstart-markdown-links', { clear = true }),
   callback = function(args)
     vim.opt_local.wrap = false
+    vim.opt_local.textwidth = 100
+    vim.opt_local.formatoptions:append 't'
 
     vim.keymap.set('n', '<Tab>', function()
       local link = [=[\[[^]]*\]\([^)]\+\)]=]
@@ -370,6 +372,47 @@ require('lazy').setup({
         topdelete = { text = '‾' }, ---@diagnostic disable-line: missing-fields
         changedelete = { text = '~' }, ---@diagnostic disable-line: missing-fields
       },
+    },
+  },
+  {
+    'folke/snacks.nvim',
+    priority = 1000,
+    lazy = false,
+    ---@type snacks.Config
+    opts = {
+      -- your configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
+      bigfile = { enabled = true },
+      dashboard = { enabled = true },
+      explorer = { enabled = true },
+      image = {
+        enabled = true,
+        doc = {
+          enabled = true,
+          -- Do not render math and images inline for now -- but use floating
+          -- window preview. While inline images are really great, it's a bit
+          -- aggressive as we don't have a full control of display layout on many
+          -- small icon-ish images which can look quite messy on some documents.
+          -- Also, for now there is no good way to toggle or configure the
+          -- behavior per buffer or per filetype.
+          -- See also https://github.com/folke/snacks.nvim/issues/1739
+          inline = false,
+          float = true,
+        },
+        math = {
+          enabled = true,
+        },
+      },
+      indent = { enabled = true },
+      input = { enabled = true },
+      picker = { enabled = true },
+      notifier = { enabled = true },
+      quickfile = { enabled = true },
+      scope = { enabled = true },
+      scroll = { enabled = true },
+      statuscolumn = { enabled = true },
+      words = { enabled = true },
     },
   },
 
@@ -1297,6 +1340,68 @@ local function diary_date()
   end
   return nil
 end
+
+vim.keymap.set('n', '<localleader>zu', function()
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local urls = {}
+  local seen = {}
+  for _, line in ipairs(lines) do
+    for raw_url in line:gmatch 'https?://%S+' do
+      local url = raw_url:gsub('[%]%[%)},.;:]+$', '')
+      if not seen[url] then
+        seen[url] = true
+        table.insert(urls, url)
+      end
+    end
+  end
+
+  local start, finish, urls_line
+  for i, line in ipairs(lines) do
+    if line == '---' then
+      if not start then
+        start = i
+      else
+        finish = i
+        break
+      end
+    elseif finish == nil and line:match '^urls:%s*$' then
+      urls_line = i
+    end
+  end
+  if not start or not finish or not urls_line then
+    return vim.notify('No frontmatter urls list found', vim.log.levels.WARN)
+  end
+
+  local existing = {}
+  local list_end = urls_line
+  while list_end < finish and lines[list_end + 1]:match '^%s*%-%s*' do
+    local value = lines[list_end + 1]:match '^%s*%-%s*(.-)%s*$'
+    if value ~= '' then
+      existing[value] = true
+    end
+    list_end = list_end + 1
+  end
+
+  local additions = {}
+  for _, url in ipairs(urls) do
+    if not existing[url] then
+      table.insert(additions, '  - ' .. url)
+    end
+  end
+  if #additions == 0 then
+    return vim.notify('No new URLs found', vim.log.levels.INFO)
+  end
+
+  if list_end > urls_line and lines[urls_line + 1]:match '^%s*%-%s*$' then
+    vim.api.nvim_buf_set_lines(0, urls_line, urls_line + 1, false, { additions[1] })
+    table.remove(additions, 1)
+  end
+  if #additions > 0 then
+    -- `finish` is one-based; use its zero-based index to insert before `---`.
+    vim.api.nvim_buf_set_lines(0, finish - 1, finish - 1, false, additions)
+  end
+  vim.notify(('Added %d URL(s) to frontmatter'):format(#urls), vim.log.levels.INFO)
+end, { desc = 'Collect URLs into frontmatter' })
 
 vim.keymap.set('n', '<localleader>zw', function()
   local date = diary_date()
