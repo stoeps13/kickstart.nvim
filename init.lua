@@ -258,7 +258,8 @@ vim.api.nvim_create_autocmd('FileType', {
   callback = function(args)
     vim.opt_local.wrap = false
     vim.opt_local.textwidth = 100
-    vim.opt_local.formatoptions:append 't'
+    vim.opt_local.formatoptions:append { 't', 'n', '2' }
+    vim.opt_local.formatlistpat = [=[^\s*\d\+\.\s\+\|^\s*[-*+]\s\+\|^\s*\[[^\]]\+\]:\&^.\{4\}]=]
 
     vim.keymap.set('n', '<Tab>', function()
       local link = [=[\[[^]]*\]\([^)]\+\)]=]
@@ -1464,7 +1465,7 @@ vim.keymap.set('n', '<localleader>zm', function()
   end
   local finish = #lines + 1
   for i = start + 1, #lines do
-    if lines[i]:match '^## ' then
+    if lines[i]:match '^## ' or lines[i] == '---' then
       finish = i
       break
     end
@@ -1491,6 +1492,9 @@ end, { desc = 'Hide diagnostics' })
 vim.keymap.set('n', '<localleader>vs', function()
   vim.diagnostic.enable(true, { bufnr = 0 })
 end, { desc = 'Show diagnostics' })
+
+-- Create a note from the selected text, always in the main zk notebook.
+vim.keymap.set('x', '<localleader>zn', ":'<,'>ZkNewFromTitleSelection { dir = " .. string.format('%q', vim.fn.expand '~/zk') .. " }<CR>", { desc = 'Create zk note from selection' })
 
 vim.keymap.set('n', '<localleader>zs', '<Cmd>ZkNotes<CR>', { desc = 'Search zk notes' })
 
