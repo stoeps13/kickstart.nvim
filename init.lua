@@ -203,7 +203,15 @@ vim.diagnostic.config {
   virtual_lines = false, -- Text shows up underneath the line, with virtual lines
 
   -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
-  jump = { float = true },
+  jump = {
+    on_jump = function(_, bufnr)
+      vim.diagnostic.open_float {
+        bufnr = bufnr,
+        scope = 'cursor',
+        focus = false,
+      }
+    end,
+  },
 }
 
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
@@ -258,8 +266,13 @@ vim.api.nvim_create_autocmd('FileType', {
   callback = function(args)
     vim.opt_local.wrap = false
     vim.opt_local.textwidth = 100
-    vim.opt_local.formatoptions:append { 't', 'n', '2' }
-    vim.opt_local.formatlistpat = [=[^\s*\d\+\.\s\+\|^\s*[-*+]\s\+\|^\s*\[[^\]]\+\]:\&^.\{4\}]=]
+    -- FileType plugins can reset these options after this callback runs.
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(args.buf) and vim.bo[args.buf].filetype == 'markdown' then
+        vim.opt_local.formatoptions:append 'n2'
+        vim.opt_local.formatlistpat = [=[^\s*\d\+\.\s\+\|^\s*[-*+]\s\+\|^\s*\[[^\]]\+\]:\&^.\{4\}]=]
+      end
+    end)
 
     vim.keymap.set('n', '<Tab>', function()
       local link = [=[\[[^]]*\]\([^)]\+\)]=]
@@ -281,9 +294,61 @@ vim.api.nvim_create_autocmd('FileType', {
       end
     end, { buffer = args.buf, desc = 'Jump to previous Markdown link' })
 
-    vim.keymap.set('n', '<CR>', vim.lsp.buf.definition, {
+    vim.keymap.set('n', '<CR>', function()
+      local line = vim.api.nvim_get_current_line()
+      local column = vim.fn.col '.'
+      local target, link_start, link_end
+      local from = 1
+
+      while true do
+        local start, finish, candidate = line:find('%b[]%(([^)]+)%)', from)
+        if not start then
+          break
+        end
+        if column >= start and column <= finish then
+          target, link_start, link_end = candidate, start, finish
+          break
+        end
+        from = finish + 1
+      end
+
+      if not target then
+        return vim.lsp.buf.definition()
+      end
+
+      target = target:gsub('^<', ''):gsub('>$', '')
+      local path, slug = target:match '^([^#]+)#?(.*)$'
+      if path:match '^https?://' then
+        return vim.ui.open(target)
+      end
+      if not path:match '%.%w+$' then
+        path = path .. '.md'
+      end
+      if not path:match '^/' then
+        path = vim.fn.expand '%:p:h' .. '/' .. path
+      end
+
+      vim.cmd.edit(vim.fn.fnameescape(path))
+      if slug ~= '' then
+        for row, heading_line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
+          local heading = heading_line:match '^#+%s+(.+)%s*$'
+          if heading then
+            local heading_slug = heading:lower():gsub('[^%w%s%-]', ''):gsub('%s+', '-'):gsub('%-+', '-'):gsub('^%-', ''):gsub('%-$', '')
+            if heading_slug == slug:lower() then
+              vim.api.nvim_win_set_cursor(0, { row, 0 })
+              break
+            end
+          end
+        end
+      end
+    end, {
       buffer = args.buf,
-      desc = 'Open Markdown link',
+      desc = 'Open Markdown link and heading',
+    })
+
+    vim.keymap.set('n', '<BS>', '<C-^>', {
+      buffer = args.buf,
+      desc = 'Return to previous buffer',
     })
   end,
 })
@@ -445,6 +510,7 @@ require('lazy').setup({
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
       delay = 0,
+      sort = { 'alphanum' },
       icons = { mappings = vim.g.have_nerd_font },
 
       -- Document existing key chains
@@ -1113,6 +1179,49 @@ require('lazy').setup({
     },
   },
   {
+    'mikavilpas/yazi.nvim',
+    version = '*', -- use the latest stable version
+    event = 'VeryLazy',
+    dependencies = {
+      { 'nvim-lua/plenary.nvim', lazy = true },
+    },
+    keys = {
+      -- 👇 in this section, choose your own keymappings!
+      {
+        '<leader>-',
+        mode = { 'n', 'v' },
+        '<cmd>Yazi<cr>',
+        desc = 'Open yazi at the current file',
+      },
+      {
+        -- Open in the current working directory
+        '<leader>cw',
+        '<cmd>Yazi cwd<cr>',
+        desc = "Open the file manager in nvim's working directory",
+      },
+      {
+        '<c-up>',
+        '<cmd>Yazi toggle<cr>',
+        desc = 'Resume the last yazi session',
+      },
+    },
+    ---@type YaziConfig | {}
+    opts = {
+      -- if you want to open yazi instead of netrw, see below for more info
+      open_for_directories = false,
+      keymaps = {
+        show_help = '<f1>',
+      },
+    },
+    -- 👇 if you use `open_for_directories=true`, this is recommended
+    init = function()
+      -- mark netrw as loaded so it's not loaded at all.
+      --
+      -- More details: https://github.com/mikavilpas/yazi.nvim/issues/802
+      vim.g.loaded_netrwPlugin = 1
+    end,
+  },
+  {
     'zk-org/zk-nvim',
     name = 'zk',
     dependencies = {
@@ -1122,6 +1231,38 @@ require('lazy').setup({
     opts = {
       -- See Setup section below
       picker = 'fzf',
+      lsp = {
+        config = {
+          on_attach = function(client, bufnr)
+            local function map(mode, lhs, rhs, desc)
+              vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+            end
+
+            map('n', 'K', vim.lsp.buf.hover, 'ZK: Preview note')
+            map('n', '<localleader>zI', function()
+              client:exec_cmd {
+                command = 'zk.index',
+                arguments = { vim.api.nvim_buf_get_name(bufnr) },
+              }
+            end, 'ZK: Index notebook')
+            map('n', '<localleader>zn', function()
+              require('zk').new {
+                title = vim.fn.input 'Title: ',
+                dir = vim.fn.expand '~/zk',
+                edit = true,
+              }
+            end, 'ZK: New note')
+            map('n', '<localleader>zj', function()
+              local date = vim.fn.input('Date: ', os.date '%Y-%m-%d')
+              if vim.fn.trim(date) == '' then
+                return
+              end
+              require('zk').new { dir = 'diary', date = date, edit = true }
+            end, 'ZK: New diary note')
+          end,
+        },
+        auto_attach = { enabled = true },
+      },
       tags = {
         multi_select_strategy = 'AND',
       },
@@ -1494,17 +1635,39 @@ vim.keymap.set('n', '<localleader>vs', function()
 end, { desc = 'Show diagnostics' })
 
 -- Create a note from the selected text, always in the main zk notebook.
-vim.keymap.set('x', '<localleader>zn', ":'<,'>ZkNewFromTitleSelection { dir = " .. string.format('%q', vim.fn.expand '~/zk') .. " }<CR>", { desc = 'Create zk note from selection' })
+vim.keymap.set(
+  'x',
+  '<localleader>zn',
+  ":'<,'>ZkNewFromTitleSelection { dir = " .. string.format('%q', vim.fn.expand '~/zk') .. ' }<CR>',
+  { desc = 'Create zk note from selection' }
+)
+vim.keymap.set(
+  'x',
+  '<localleader>zm',
+  ":'<,'>ZkNewFromTitleSelection { dir = " .. string.format('%q', vim.fn.expand '~/zk') .. ", template = 'meeting.md' }<CR>",
+  { desc = 'Create meeting note from selection' }
+)
 
 vim.keymap.set('n', '<localleader>zs', '<Cmd>ZkNotes<CR>', { desc = 'Search zk notes' })
-
-vim.keymap.set('n', '<localleader>zD', function()
-  local input = vim.fn.input('Date: ', os.date('%Y-%m-%d', os.time() + 86400 * 1))
-  local date = vim.fn.trim(vim.fn.system('date -d ' .. vim.fn.shellescape(input) .. ' +%Y-%m-%d 2>/dev/null'))
-  if date ~= '' then
-    vim.cmd.edit(vim.fn.fnameescape(vim.fn.expand('~/zk/diary/' .. date .. '.md')))
+vim.keymap.set('n', '<localleader>zi', '<Cmd>ZkInsertLink<CR>', { desc = 'Search zk notes and insert link' })
+vim.keymap.set('n', '<localleader>zb', '<Cmd>ZkBuffers<CR>', { desc = 'Search open zk buffers' })
+vim.keymap.set('n', '<localleader>zB', '<Cmd>ZkBacklinks<CR>', { desc = 'Search zk backlinks' })
+vim.keymap.set('n', '<localleader>zL', '<Cmd>ZkLinks<CR>', { desc = 'Search zk links' })
+vim.keymap.set('n', '<localleader>zt', '<Cmd>ZkTags<CR>', { desc = 'Search zk tags' })
+vim.keymap.set('n', '<localleader>zl', function()
+  local heading = vim.api.nvim_get_current_line():match '^#+%s+(.+)%s*$'
+  if not heading then
+    return vim.notify('Cursor is not on a Markdown heading', vim.log.levels.WARN)
   end
-end, { desc = 'Create diary entry for date' })
+
+  local slug = heading:lower():gsub('[^%w%s%-]', ''):gsub('%s+', '-'):gsub('%-+', '-'):gsub('^%-', ''):gsub('%-$', '')
+  local filename = vim.fn.expand '%:t:r'
+  local directory = vim.fn.expand '%:p:h:t'
+  local target = (directory == 'diary' and 'diary/' or '') .. filename .. '#' .. slug
+  local link = ('[%s](%s)'):format(heading, target)
+  vim.fn.setreg('+', link)
+  vim.notify('Copied: ' .. link, vim.log.levels.INFO)
+end, { desc = 'Copy link to current heading' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
