@@ -6,13 +6,14 @@ return {
     config = function()
       local lint = require 'lint'
       lint.linters.ansiblelint = {
-        cmd = '/usr/bin/ansible-lint',
+        cmd = 'ansible-lint',
         stdin = false,
-        args = { '-f', 'codeclimate' },
+        args = { '-p', '--nocolor' },
         stream = 'stdout',
         ignore_exitcode = true,
-        parser = require('lint.parser').from_errorformat('%f:%l:%c: %m', {
+        parser = require('lint.parser').from_errorformat('%f:%l:%c: %m,%f:%l: %m', {
           source = 'ansible-lint',
+          severity = vim.diagnostic.severity.INFO,
         }),
       }
 
@@ -34,6 +35,7 @@ return {
           -- typst = { 'tinymist' },
           -- vimwiki = { 'vale' },
           ansible = { 'ansiblelint' },
+          ['yaml.ansible'] = { 'ansiblelint' },
           dockerfile = { 'hadolint' },
           golang = { 'gopls' },
           html = { 'htmlhint' },

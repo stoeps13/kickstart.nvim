@@ -181,7 +181,9 @@ vim.filetype.add {
     ['.*handlers/.*%.ya?ml'] = 'yaml.ansible',
   },
 }
-vim.env.PATH = vim.env.HOME .. '/.local/bin:' .. vim.env.PATH
+local path_separator = vim.fn.has 'win32' == 1 and ';' or ':'
+local local_bin = vim.fs.joinpath(vim.fn.expand '~', '.local', 'bin')
+vim.env.PATH = local_bin .. path_separator .. (vim.env.PATH or '')
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -313,22 +315,26 @@ vim.api.nvim_create_autocmd('FileType', {
       end
 
       if not target then
-        return vim.lsp.buf.definition()
+        if next(vim.lsp.get_clients { bufnr = 0 }) then
+          return vim.lsp.buf.definition()
+        end
+        return vim.cmd.normal { '<CR>', bang = true }
       end
 
       target = target:gsub('^<', ''):gsub('>$', '')
-      local path, slug = target:match '^([^#]+)#?(.*)$'
-      if path:match '^https?://' then
+      local path, slug = target:match '^([^#]*)#?(.*)$'
+      if path ~= '' and path:match '^https?://' then
         return vim.ui.open(target)
       end
-      if not path:match '%.%w+$' then
-        path = path .. '.md'
+      if path ~= '' then
+        if not path:match '%.%w+$' then
+          path = path .. '.md'
+        end
+        if not path:match '^/' then
+          path = vim.fn.expand '%:p:h' .. '/' .. path
+        end
+        vim.cmd.edit(vim.fn.fnameescape(path))
       end
-      if not path:match '^/' then
-        path = vim.fn.expand '%:p:h' .. '/' .. path
-      end
-
-      vim.cmd.edit(vim.fn.fnameescape(path))
       if slug ~= '' then
         for row, heading_line in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, false)) do
           local heading = heading_line:match '^#+%s+(.+)%s*$'
@@ -355,6 +361,7 @@ vim.api.nvim_create_autocmd('FileType', {
 -- [[ Hugo Template Detection (The "Force" Method) ]]
 vim.api.nvim_create_autocmd('BufReadPost', {
   pattern = '*.html',
+  group = vim.api.nvim_create_augroup('hugo-template-detection', { clear = true }),
   callback = function(args)
     local buf = args.buf
     -- We use a small delay to ensure the buffer is fully loaded and
@@ -380,7 +387,6 @@ vim.api.nvim_create_autocmd('BufReadPost', {
         vim.bo[buf].filetype = 'hugo'
         -- Set the safety flag for Conform
         vim.b[buf].hugo_template = true
-        vim.treesitter.language.register('templ', 'hugo')
       end
     end)
   end,
@@ -862,23 +868,6 @@ require('lazy').setup({
           filetypes = { 'html', 'templ' },
         },
         tinymist = {},
-        prettier = {
-          cmd = { 'prettier' },
-          filetypes = {
-            'css',
-            'graphql',
-            'html',
-            'javascript',
-            'javascriptreact',
-            'json',
-            'less',
-            'markdown',
-            'scss',
-            'typescript',
-            'typescriptreact',
-            'yaml',
-          },
-        },
         vale_ls = {
           cmd = { 'vale-ls' },
           filetypes = { 'asciidoc', 'text', 'tex', 'rst', 'html', 'xml' },
@@ -886,29 +875,29 @@ require('lazy').setup({
           single_file_support = true,
           settings = {
             vale = {
-              configPath = vim.env.HOME .. '/.config/vale/.vale.ini',
+              configPath = vim.fn.expand '~/.config/vale/.vale.ini',
             },
           },
         },
       }
 
-      -- Ensure the servers and tools above are installed
-      --
-      -- To check the current status of installed tools and/or manually install
-      -- other tools, you can run
-      --    :Mason
-      --
-      -- You can press `g?` for help in this menu.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-        'ruff', -- Python linting and formatting
-        'ansible-lint', -- Ansible linting
-        'ansiblels',
-        'yamllint', -- YAML linting
-      })
-
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      -- Ensure the LSP servers and command-line tools above are installed.
+      -- Mason uses different package names for some LSP servers, so let
+      -- mason-lspconfig handle server-name mapping and reserve tool-installer
+      -- for formatters and linters.
+      require('mason-lspconfig').setup {
+        ensure_installed = vim.tbl_keys(servers),
+        automatic_enable = false,
+      }
+      require('mason-tool-installer').setup {
+        ensure_installed = {
+          'prettier', -- YAML/JSON formatting
+          'stylua', -- Lua formatting
+          'ruff', -- Python linting and formatting
+          'ansible-lint', -- Ansible linting
+          'yamllint', -- YAML linting
+        },
+      }
 
       for name, server in pairs(servers) do
         vim.lsp.config(name, server)
@@ -951,7 +940,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        python = { 'ruff', 'black' },
+        python = { 'ruff_format' },
         yaml = { 'prettier' },
         html = { 'lsp' },
         hugo = {},
@@ -1271,6 +1260,7 @@ require('lazy').setup({
       require('zk').setup(opts)
       vim.api.nvim_create_autocmd('BufWritePre', {
         pattern = '*.md',
+        group = vim.api.nvim_create_augroup('zk-frontmatter-updated', { clear = true }),
         callback = function(args)
           local lines = vim.api.nvim_buf_get_lines(args.buf, 0, -1, false)
           local in_frontmatter = false
@@ -1399,9 +1389,27 @@ require('lazy').setup({
     branch = 'main',
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter-intro`
     config = function()
-      local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+      local parsers = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'python',
+        'query',
+        'sql',
+        'templ',
+        'vim',
+        'vimdoc',
+        'yaml',
+      }
+      vim.treesitter.language.register('templ', 'hugo')
       require('nvim-treesitter').install(parsers)
       vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('kickstart-treesitter', { clear = true }),
         callback = function(args)
           local buf, filetype = args.buf, args.match
 
@@ -1414,6 +1422,14 @@ require('lazy').setup({
           if not vim.treesitter.language.add(language) then
             return
           end
+          -- Load installed parsers so fenced Markdown code blocks can use
+          -- Tree-sitter language injections (for example, ```sql blocks).
+          for _, parser in ipairs(parsers) do
+            if parser ~= language then
+              pcall(vim.treesitter.language.add, parser)
+            end
+          end
+
           -- enables syntax highlighting and other treesitter features
           vim.treesitter.start(buf, language)
 
@@ -1538,6 +1554,7 @@ vim.keymap.set('n', '<localleader>zu', function()
   if #additions == 0 then
     return vim.notify('No new URLs found', vim.log.levels.INFO)
   end
+  local added_count = #additions
 
   if list_end > urls_line and lines[urls_line + 1]:match '^%s*%-%s*$' then
     vim.api.nvim_buf_set_lines(0, urls_line, urls_line + 1, false, { additions[1] })
@@ -1547,10 +1564,13 @@ vim.keymap.set('n', '<localleader>zu', function()
     -- `finish` is one-based; use its zero-based index to insert before `---`.
     vim.api.nvim_buf_set_lines(0, finish - 1, finish - 1, false, additions)
   end
-  vim.notify(('Added %d URL(s) to frontmatter'):format(#urls), vim.log.levels.INFO)
+  vim.notify(('Added %d URL(s) to frontmatter'):format(added_count), vim.log.levels.INFO)
 end, { desc = 'Collect URLs into frontmatter' })
 
 vim.keymap.set('n', '<localleader>zw', function()
+  if vim.fn.executable 'weather.sh' == 0 then
+    return vim.notify('weather.sh is not available', vim.log.levels.WARN)
+  end
   local date = diary_date()
   if not date then
     return vim.notify('No diary date in frontmatter', vim.log.levels.WARN)
@@ -1580,6 +1600,9 @@ vim.keymap.set('n', '<localleader>zw', function()
     return vim.notify('No weather marker found', vim.log.levels.WARN)
   end
   local weather = vim.fn.systemlist 'weather.sh Heppenheim'
+  if vim.v.shell_error ~= 0 or not weather[1] or weather[1] == '' then
+    return vim.notify('Could not retrieve weather', vim.log.levels.WARN)
+  end
   -- Preserve a blank line after the heading; otherwise replace the existing weather line.
   if lines[weather_marker - 1] == '' then
     vim.api.nvim_buf_set_lines(0, weather_marker - 1, weather_marker - 1, false, { weather[1] or '' })
@@ -1611,6 +1634,9 @@ vim.keymap.set('n', '<localleader>zm', function()
       break
     end
   end
+  if vim.fn.executable 'vimwiki-cal.sh' == 0 then
+    return vim.notify('vimwiki-cal.sh is not available', vim.log.levels.WARN)
+  end
   local meetings = vim.fn.systemlist('vimwiki-cal.sh -d ' .. vim.fn.shellescape(date) .. ' -n 1 2>/dev/null')
   if meetings[1] and meetings[1]:match '^## %[' then
     table.remove(meetings, 1)
@@ -1627,6 +1653,16 @@ vim.api.nvim_create_user_command('Vale', function()
   require('lint').try_lint 'vale'
 end, { desc = 'Run Vale on the current buffer' })
 vim.keymap.set('n', '<localleader>vv', '<Cmd>Vale<CR>', { desc = 'Run Vale' })
+vim.keymap.set('n', '<leader>zd', function()
+  local line = vim.api.nvim_get_current_line()
+  local replacement = line:gsub('^(%s*[-*+]%s+)%[([ xX])%]', function(prefix, state)
+    return prefix .. (state == ' ' and '[x]' or '[ ]')
+  end, 1)
+  if replacement == line then
+    return vim.notify('Cursor is not on a Markdown checkbox', vim.log.levels.WARN)
+  end
+  vim.api.nvim_set_current_line(replacement)
+end, { desc = 'Toggle Markdown checkbox' })
 vim.keymap.set('n', '<localleader>vh', function()
   vim.diagnostic.enable(false, { bufnr = 0 })
 end, { desc = 'Hide diagnostics' })
