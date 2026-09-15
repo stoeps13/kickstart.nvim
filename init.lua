@@ -103,7 +103,8 @@ vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
 vim.o.relativenumber = true
-vim.o.linebreak = true
+-- Do not visually wrap long lines.
+vim.o.wrap = false
 -- vim.o.columns = 120
 
 -- Enable mouse mode, can be useful for resizing splits for example!
@@ -1131,7 +1132,48 @@ require('lazy').setup({
       --  - va)  - [V]isually select [A]round [)]paren
       --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
       --  - ci'  - [C]hange [I]nside [']quote
-      require('mini.ai').setup { n_lines = 500 }
+      require('mini.ai').setup {
+        n_lines = 500,
+        custom_textobjects = {
+          f = function(ai_type)
+            local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+            local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+            local opening, closing
+
+            for line = cursor_line, 1, -1 do
+              if lines[line]:match '^```.*$' then
+                opening = line
+                break
+              end
+            end
+            if not opening then
+              return
+            end
+
+            for line = opening + 1, #lines do
+              if lines[line]:match '^```$' then
+                closing = line
+                break
+              end
+            end
+            if not closing or closing <= opening + 1 then
+              return
+            end
+
+            if ai_type == 'a' then
+              return {
+                from = { line = opening, col = 1 },
+                to = { line = closing, col = #lines[closing] },
+              }
+            end
+
+            return {
+              from = { line = opening + 1, col = 1 },
+              to = { line = closing - 1, col = #lines[closing - 1] },
+            }
+          end,
+        },
+      }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       --
@@ -1293,6 +1335,17 @@ require('lazy').setup({
       vim.treesitter.language.register('markdown', 'vimwiki')
     end,
   },
+  {
+    'dhruvasagar/vim-table-mode',
+    ft = { 'markdown', 'vimwiki' },
+    init = function()
+      vim.g.table_mode_auto_align = 1
+    end,
+  },
+  {
+    'dkarter/bullets.vim',
+    ft = { 'markdown', 'vimwiki' },
+  },
   -- Paste images from clipboard
   {
     'HakonHarnes/img-clip.nvim',
@@ -1392,6 +1445,7 @@ require('lazy').setup({
       local parsers = {
         'bash',
         'c',
+        'css',
         'diff',
         'html',
         'lua',
@@ -1407,6 +1461,8 @@ require('lazy').setup({
         'yaml',
       }
       vim.treesitter.language.register('templ', 'hugo')
+      -- Markdown fences use `jsp`, but Treesitter's HTML parser handles JSP markup.
+      vim.treesitter.language.register('html', 'jsp')
       require('nvim-treesitter').install(parsers)
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('kickstart-treesitter', { clear = true }),
