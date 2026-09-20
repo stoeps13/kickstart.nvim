@@ -268,7 +268,20 @@ vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('kickstart-markdown-links', { clear = true }),
   callback = function(args)
     vim.opt_local.wrap = false
-    vim.opt_local.textwidth = 100
+
+    local function set_markdown_textwidth()
+      local line = vim.api.nvim_get_current_line()
+      local is_list = line:match '^%s*[-*+]%s+' or line:match '^%s*%d+[.)]%s+'
+      is_list = is_list or line:match '^%s*[-*+]%s+%[[ xX]%]%s+'
+      vim.opt_local.textwidth = is_list and 0 or 100
+    end
+
+    set_markdown_textwidth()
+    vim.api.nvim_create_autocmd({ 'CursorMovedI', 'InsertCharPre' }, {
+      buffer = args.buf,
+      callback = set_markdown_textwidth,
+    })
+
     -- FileType plugins can reset these options after this callback runs.
     vim.schedule(function()
       if vim.api.nvim_buf_is_valid(args.buf) and vim.bo[args.buf].filetype == 'markdown' then
@@ -1623,6 +1636,42 @@ vim.keymap.set('n', '<localleader>zu', function()
   vim.notify(('Added %d URL(s) to frontmatter'):format(added_count), vim.log.levels.INFO)
 end, { desc = 'Collect URLs into frontmatter' })
 
+vim.keymap.set('n', '<leader>zW', function()
+  local view = vim.fn.winsaveview()
+  local textwidth = vim.bo.textwidth
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local paragraphs = {}
+  local start, has_list = nil, false
+
+  local function finish_paragraph(line)
+    if start and not has_list then
+      table.insert(paragraphs, { start, line })
+    end
+    start, has_list = nil, false
+  end
+
+  for i, line in ipairs(lines) do
+    if line:match '^%s*$' then
+      finish_paragraph(i - 1)
+    else
+      start = start or i
+      has_list = has_list
+        or line:match '^%s*[-*+]%s+'
+        or line:match '^%s*%d+[.)]%s+'
+    end
+  end
+  finish_paragraph(#lines)
+
+  vim.bo.textwidth = 100
+  for i = #paragraphs, 1, -1 do
+    local paragraph = paragraphs[i]
+    vim.api.nvim_win_set_cursor(0, { paragraph[1], 0 })
+    vim.cmd 'normal! gqap'
+  end
+  vim.bo.textwidth = textwidth
+  vim.fn.winrestview(view)
+end, { desc = 'Wrap prose at 100 columns' })
+
 vim.keymap.set('n', '<localleader>zw', function()
   if vim.fn.executable 'weather.sh' == 0 then
     return vim.notify('weather.sh is not available', vim.log.levels.WARN)
@@ -1659,11 +1708,12 @@ vim.keymap.set('n', '<localleader>zw', function()
   if vim.v.shell_error ~= 0 or not weather[1] or weather[1] == '' then
     return vim.notify('Could not retrieve weather', vim.log.levels.WARN)
   end
+  local weather_line = os.date '%H:%M' .. ' ' .. weather[1]
   -- Preserve a blank line after the heading; otherwise replace the existing weather line.
   if lines[weather_marker - 1] == '' then
-    vim.api.nvim_buf_set_lines(0, weather_marker - 1, weather_marker - 1, false, { weather[1] or '' })
+    vim.api.nvim_buf_set_lines(0, weather_marker - 1, weather_marker - 1, false, { weather_line })
   else
-    vim.api.nvim_buf_set_lines(0, weather_marker - 2, weather_marker - 1, false, { weather[1] or '' })
+    vim.api.nvim_buf_set_lines(0, weather_marker - 2, weather_marker - 1, false, { weather_line })
   end
 end, { desc = 'Insert diary weather' })
 
