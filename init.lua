@@ -251,6 +251,14 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
+-- Compile LilyPond scores after saving.
+vim.api.nvim_create_autocmd('BufWritePost', {
+  pattern = { '*.ly', '*.ily' },
+  callback = function()
+    vim.cmd 'LilyCmp'
+  end,
+})
+
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
 --  See `:help vim.hl.on_yank()`
@@ -466,6 +474,17 @@ require('lazy').setup({
     },
   },
   {
+    'martineausimon/nvim-lilypond-suite',
+    opts = {
+      lilypond = {
+        mappings = {
+          compile = '<leader>lp',
+          open_pdf = '<leader>lv',
+        },
+      },
+    },
+  },
+  {
     'folke/snacks.nvim',
     priority = 1000,
     lazy = false,
@@ -626,6 +645,115 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+      local pickers = require 'telescope.pickers'
+      local finders = require 'telescope.finders'
+      local conf = require('telescope.config').values
+      local actions = require 'telescope.actions'
+      local action_state = require 'telescope.actions.state'
+
+      local function add_task_tag(uuid)
+        local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+        local tag = uuid
+        local start, finish
+        if lines[1] == '---' then
+          for i = 2, #lines do
+            if lines[i] == '---' then
+              finish = i
+              break
+            end
+          end
+          if finish then
+            start = 1
+          end
+        end
+
+        if not start then
+          vim.notify('No YAML front matter found', vim.log.levels.ERROR)
+          return false
+        end
+
+        for i = start + 1, finish - 1 do
+          if lines[i]:match '^tags:%s*%[' then
+            if not lines[i]:match(vim.pesc(tag)) then
+              lines[i] = lines[i]:gsub('%]%s*$', ', ' .. tag .. ']')
+            end
+            vim.api.nvim_buf_set_lines(0, i - 1, i, false, { lines[i] })
+            return true
+          elseif lines[i]:match '^tags:%s*$' then
+            table.insert(lines, i + 1, '  - ' .. tag)
+            vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+            return true
+          end
+        end
+
+        table.insert(lines, start + 1, 'tags: [' .. tag .. ']')
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+        return true
+      end
+
+      local function task_picker()
+        vim.system({ 'task', 'status:pending', 'export' }, { text = true }, function(result)
+          vim.schedule(function()
+            if result.code ~= 0 then
+              vim.notify(result.stderr ~= '' and result.stderr or 'task export failed', vim.log.levels.ERROR)
+              return
+            end
+            local ok, tasks = pcall(vim.json.decode, result.stdout)
+            if not ok or type(tasks) ~= 'table' then
+              vim.notify('Could not parse task export', vim.log.levels.ERROR)
+              return
+            end
+            local entries = {}
+            for _, task in ipairs(tasks) do
+              entries[#entries + 1] = task
+            end
+            pickers.new({}, {
+              prompt_title = 'Pending tasks',
+              finder = finders.new_table {
+                results = entries,
+                entry_maker = function(task)
+                  return { value = task, ordinal = task.description, display = string.format('%s  %s', task.uuid, task.description) }
+                end,
+              },
+              sorter = conf.generic_sorter {},
+              attach_mappings = function(prompt_bufnr)
+                actions.select_default:replace(function()
+                  local task = action_state.get_selected_entry().value
+                  actions.close(prompt_bufnr)
+                  if add_task_tag(task.uuid) then
+                    vim.cmd 'update'
+                    local path = vim.fn.fnamemodify(vim.fn.expand '%:p', ':~')
+                    local annotation_text = 'zk: ' .. path
+                    local already_annotated = false
+                    for _, existing in ipairs(task.annotations or {}) do
+                      if existing.description == annotation_text then
+                        already_annotated = true
+                        break
+                      end
+                    end
+                    if already_annotated then
+                      vim.notify('Task already links to ' .. path)
+                    else
+                      vim.system({ 'task', task.uuid, 'annotate', '--', annotation_text }, {}, function(annotation)
+                        vim.schedule(function()
+                          if annotation.code ~= 0 then
+                            vim.notify(annotation.stderr ~= '' and annotation.stderr or 'Task annotation failed', vim.log.levels.ERROR)
+                          else
+                            vim.notify('Linked task ' .. task.uuid)
+                          end
+                        end)
+                      end)
+                    end
+                  end
+                end)
+                return true
+              end,
+            }):find()
+          end)
+        end)
+      end
+
+      vim.keymap.set('n', '<leader>zT', task_picker, { desc = '[Z]k link [T]ask' })
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
@@ -980,6 +1108,10 @@ require('lazy').setup({
     event = 'VimEnter',
     version = '1.*',
     dependencies = {
+      {
+        'Kaiser-Yang/blink-cmp-dictionary',
+        dependencies = { 'nvim-lua/plenary.nvim' },
+      },
       -- Snippet Engine
       {
         'L3MON4D3/LuaSnip',
@@ -1069,7 +1201,24 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets' },
+        default = { 'lsp', 'path', 'snippets', 'dictionary' },
+        providers = {
+          dictionary = {
+            module = 'blink-cmp-dictionary',
+            name = 'Dictionary',
+            min_keyword_length = 2,
+            opts = {
+              dictionary_files = function()
+                if vim.bo.filetype ~= 'lilypond' then
+                  return {}
+                end
+
+                local lilywords = vim.fn.stdpath('data') .. '/lazy/nvim-lilypond-suite/lilywords'
+                return vim.fn.glob(lilywords .. '/*', true, true)
+              end,
+            },
+          },
+        },
       },
 
       snippets = { preset = 'luasnip' },
@@ -1655,9 +1804,7 @@ vim.keymap.set('n', '<leader>zW', function()
       finish_paragraph(i - 1)
     else
       start = start or i
-      has_list = has_list
-        or line:match '^%s*[-*+]%s+'
-        or line:match '^%s*%d+[.)]%s+'
+      has_list = has_list or line:match '^%s*[-*+]%s+' or line:match '^%s*%d+[.)]%s+'
     end
   end
   finish_paragraph(#lines)
