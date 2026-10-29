@@ -192,6 +192,41 @@ vim.env.PATH = local_bin .. path_separator .. (vim.env.PATH or '')
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+local function taskwarrior_add()
+  vim.ui.input({ prompt = 'Project: ' }, function(project)
+    if not project or project == '' then return end
+
+    vim.ui.input({ prompt = 'Title: ' }, function(title)
+      if not title or title == '' then return end
+
+      vim.ui.input({ prompt = 'Tags (space-separated): ' }, function(tags)
+        vim.ui.input({ prompt = 'Due (optional, e.g. tomorrow): ' }, function(due)
+          local command = {
+            'task',
+            'add',
+            'proj:' .. project,
+            title,
+          }
+
+          for tag in (tags or ''):gmatch('%S+') do
+            local clean_tag = tag:gsub('^+', '')
+            table.insert(command, '+' .. clean_tag)
+          end
+
+          if due and due ~= '' then
+            table.insert(command, 'due:' .. due)
+          end
+
+          local escaped = vim.tbl_map(vim.fn.shellescape, command)
+          vim.cmd('terminal ' .. table.concat(escaped, ' '))
+        end)
+      end)
+    end)
+  end)
+end
+
+vim.keymap.set('n', '<leader>ta', taskwarrior_add, { desc = 'Taskwarrior: add task' })
+
 -- Diagnostic Config & Keymaps
 -- See :help vim.diagnostic.Opts
 vim.diagnostic.config {

@@ -110,6 +110,13 @@ return {
     t { '" -->' },
   }),
 
+  s('asciinema', {
+    t '<div class="asciinema-player" data-cast="https://asciinema.adminforge.de/a/',
+    i(1, 'video-id'),
+    t '.cast" data-autoplay="true" data-theme="solarized-light" data-font-size="big" data-fit="none" data-start-at="0"></div>',
+    i(0),
+  }),
+
   s('speakernotes', {
     t { '<aside class="notes">', '' },
     i(0),
